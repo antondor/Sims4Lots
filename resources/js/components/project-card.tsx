@@ -22,16 +22,6 @@ export const ProjectCard = () => {
                         21212312332
                     </span>
                 </p>
-
-                <Button
-                    asChild
-                    className="mt-4 w-full hover:opacity-90 flex items-center justify-center"
-                >
-                    {/*<a href={route("lobbies.show", lobby.id)}>*/}
-                    {/*    Join Lobby*/}
-                    {/*    <ArrowRight className="ml-2 h-4 w-4" />*/}
-                    {/*</a>*/}
-                </Button>
             </CardContent>
         </Card>
     )
