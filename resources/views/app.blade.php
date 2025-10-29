@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Laravel + Inertia</title>
     @viteReactRefresh
+    @routes
     @vite(['resources/js/app.tsx', 'resources/js/app.js'])
     @inertiaHead
 </head>

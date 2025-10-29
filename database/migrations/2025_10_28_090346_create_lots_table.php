@@ -22,6 +22,7 @@ return new class extends Migration
             $table->tinyInteger('bedrooms')->nullable();
             $table->tinyInteger('bathrooms')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('lot_images', function (Blueprint $table) {
@@ -32,6 +33,7 @@ return new class extends Migration
             $table->string('url');
             $table->unsignedInteger('position')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

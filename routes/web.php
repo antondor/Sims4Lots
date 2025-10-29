@@ -1,10 +1,10 @@
 <?php
 
+use App\Http\Controllers\LotController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('dashboard', []);
-});
-//Route::get('/lobbies', [CardsController::class, 'index'])->name('cards.index');
-Route::get('/lots/{lot}', [LotController::class, 'show']);
+Route::get('/dashboard', [LotController::class, 'index'])->name('dashboard');
+Route::get('/', fn () => redirect()->route('dashboard'));
+
+Route::get('/lots/{lot}', [LotController::class, 'show'])->name('lots.show');
+
