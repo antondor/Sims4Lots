@@ -10,6 +10,7 @@ import { resolveSrc, AVATAR_PLACEHOLDER } from "@/lib";
 
 export function LotCard({ lot }: { lot: Lot }) {
     const userName   = lot.user?.name ?? "Unknown user";
+    const cover = lot.images?.[0]?.url ?? '/placeholder.jpg';
     const userAvatar: string =
         resolveSrc(lot.user?.avatar) ??
         AVATAR_PLACEHOLDER;
@@ -42,7 +43,7 @@ export function LotCard({ lot }: { lot: Lot }) {
                                 {images.map((img) => (
                                     <CarouselItem key={img.id} className="basis-full">
                                         <img
-                                            src={img.url}
+                                            src={cover}
                                             alt={`${lot.name} image ${img.position}`}
                                             className="block w-full h-64 md:h-80 object-cover"
                                             loading="lazy"

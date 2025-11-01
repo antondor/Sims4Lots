@@ -6,9 +6,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider>
             <AppSidebar />
-            <main>
+            <main className="flex-1">
                 <SidebarTrigger />
-                {children}
+                <div className="container mx-auto max-w-screen-2xl px-4">
+                    {children}
+                </div>
             </main>
         </SidebarProvider>
     )
