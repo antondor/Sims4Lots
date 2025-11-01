@@ -1,12 +1,12 @@
-import React, {useState} from "react";
+import React, { useMemo, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {route} from "ziggy-js";
+import { route } from "ziggy-js";
+import { TextField } from "@/components/upload-form/text-field";
+import { SelectField } from "@/components/upload-form/select-field";
+import { PageHeader } from "@/components/upload-form/page-header";
+import { ImageUpload } from "@/components/upload-form/image-upload";
 
 type Enums = {
     lot_sizes: string[];
@@ -27,7 +27,7 @@ export default function CreateLot({ enums }: { enums: Enums }) {
         lot_type: string;
         bedrooms: number | string;
         bathrooms: number | string;
-        images: File[]; // <-- файлы
+        images: File[];
     }>({
         name: "",
         description: "",
@@ -47,8 +47,6 @@ export default function CreateLot({ enums }: { enums: Enums }) {
     const onFilesChange = (files: FileList | null) => {
         const arr = files ? Array.from(files) : [];
         setData("images", arr);
-
-        // предпросмотр
         const readers = arr.map((f) => URL.createObjectURL(f));
         setPreviews(readers);
     };
@@ -56,9 +54,8 @@ export default function CreateLot({ enums }: { enums: Enums }) {
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route("lots.store"), {
-            forceFormData: true, // КРИТИЧНО для отправки файлов через Inertia
+            forceFormData: true,
             onSuccess: () => {
-                // очистим превью-шки
                 previews.forEach((url) => URL.revokeObjectURL(url));
                 reset("images");
                 setPreviews([]);
@@ -66,177 +63,129 @@ export default function CreateLot({ enums }: { enums: Enums }) {
         });
     };
 
+    const badIndexes = Object.keys(errors)
+        .filter((k) => k.startsWith("images.") && /^\d+$/.test(k.split(".")[1]))
+        .map((k) => Number(k.split(".")[1]));
+    const badSet = useMemo(() => new Set(badIndexes ?? []), [badIndexes]);
+
     return (
         <MainLayout>
             <Head title="Create lot" />
             <div className="container mx-auto max-w-screen-md px-4 py-8">
-                <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold mb-2">Create new lot</h1>
-                        <p className="text-muted-foreground text-sm">Fill the form to publish your Sims 4 lot</p>
-                    </div>
-                    <Link href={route("dashboard")}>
-                        <Button variant="outline">Back</Button>
-                    </Link>
-                </div>
+                <PageHeader
+                    title="Create new lot"
+                    subtitle="Fill the form to publish your Sims 4 lot"
+                    right={
+                        <Link href={route("dashboard")}>
+                            <Button variant="outline">Back</Button>
+                        </Link>
+                    }
+                />
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="grid gap-6 sm:grid-cols-2">
                         <div className="sm:col-span-2">
-                            <Label htmlFor="name" className="mb-2">Name</Label>
-                            <Input
+                            <TextField
                                 id="name"
+                                label="Name"
                                 value={data.name}
-                                onChange={(e) => setData("name", e.target.value)}
+                                onChange={(v) => setData("name", v)}
                                 placeholder="Willow Creek Cottage"
+                                error={errors.name as string | undefined}
                             />
-                            {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
                         </div>
 
                         <div className="sm:col-span-2">
-                            <Label htmlFor="description" className="mb-2">Description</Label>
-                            <Textarea
+                            <TextField
                                 id="description"
+                                label="Description"
+                                textarea
                                 value={data.description ?? ""}
-                                onChange={(e) => setData("description", e.target.value)}
+                                onChange={(v) => setData("description", v)}
                                 placeholder="Short description"
+                                error={errors.description as string | undefined}
                             />
-                            {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
                         </div>
 
-                        <div>
-                            <Label htmlFor="creator_id" className="mb-2">Creator ID</Label>
-                            <Input
-                                id="creator_id"
-                                value={data.creator_id}
-                                onChange={(e) => setData("creator_id", e.target.value)}
-                                placeholder="Your Sims gallery ID"
+                        <TextField
+                            id="creator_id"
+                            label="Creator ID"
+                            value={data.creator_id}
+                            onChange={(v) => setData("creator_id", v)}
+                            placeholder="Your Sims gallery ID"
+                            error={errors.creator_id as string | undefined}
+                        />
+
+                        <TextField
+                            id="creator_link"
+                            label="Creator link"
+                            value={data.creator_link ?? ""}
+                            onChange={(v) => setData("creator_link", v)}
+                            placeholder="https://example.com/profile"
+                            error={errors.creator_link as string | undefined}
+                        />
+
+                        <SelectField
+                            label="Lot size"
+                            value={data.lot_size}
+                            onValueChange={(v) => setData("lot_size", v)}
+                            options={enums.lot_sizes}
+                            error={errors.lot_size as string | undefined}
+                        />
+
+                        <SelectField
+                            label="Content type"
+                            value={data.content_type}
+                            onValueChange={(v) => setData("content_type", v)}
+                            options={enums.content_types}
+                            error={errors.content_type as string | undefined}
+                        />
+
+                        <SelectField
+                            label="Furnishing"
+                            value={data.furnishing}
+                            onValueChange={(v) => setData("furnishing", v)}
+                            options={enums.furnishings}
+                            error={errors.furnishing as string | undefined}
+                        />
+
+                        <SelectField
+                            label="Lot type"
+                            value={data.lot_type}
+                            onValueChange={(v) => setData("lot_type", v)}
+                            options={enums.lot_types}
+                            error={errors.lot_type as string | undefined}
+                        />
+
+                        <TextField
+                            id="bedrooms"
+                            label="Bedrooms"
+                            type="number"
+                            value={String(data.bedrooms)}
+                            onChange={(v) => setData("bedrooms", v)}
+                            placeholder="e.g. 3"
+                            error={errors.bedrooms as string | undefined}
+                        />
+
+                        <TextField
+                            id="bathrooms"
+                            label="Bathrooms"
+                            type="number"
+                            value={String(data.bathrooms)}
+                            onChange={(v) => setData("bathrooms", v)}
+                            placeholder="e.g. 2"
+                            error={errors.bathrooms as string | undefined}
+                        />
+
+                        <div className="sm:col-span-2">
+                            <ImageUpload
+                                label="Images — 16:9 (≥1280×720), up to 10 files"
+                                helper="Upload widescreen screenshots; other ratios will be rejected."
+                                onChange={onFilesChange}
+                                errors={errors}
+                                previews={previews}
+                                badSet={badSet}
                             />
-                            {errors.creator_id && <p className="text-sm text-red-500 mt-1">{errors.creator_id}</p>}
-                        </div>
-
-                        <div>
-                            <Label htmlFor="creator_link" className="mb-2">Creator link</Label>
-                            <Input
-                                id="creator_link"
-                                value={data.creator_link ?? ""}
-                                onChange={(e) => setData("creator_link", e.target.value)}
-                                placeholder="https://example.com/profile"
-                            />
-                            {errors.creator_link && <p className="text-sm text-red-500 mt-1">{errors.creator_link}</p>}
-                        </div>
-
-                        <div>
-                            <Label className="mb-2">Lot size</Label>
-                            <Select
-                                value={data.lot_size}
-                                onValueChange={(v) => setData("lot_size", v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
-                                <SelectContent>
-                                    {enums.lot_sizes.map((s) => (
-                                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.lot_size && <p className="text-sm text-red-500 mt-1">{errors.lot_size}</p>}
-                        </div>
-
-                        <div>
-                            <Label className="mb-2">Content type</Label>
-                            <Select
-                                value={data.content_type}
-                                onValueChange={(v) => setData("content_type", v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="Select content type" /></SelectTrigger>
-                                <SelectContent>
-                                    {enums.content_types.map((s) => (
-                                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.content_type && <p className="text-sm text-red-500 mt-1">{errors.content_type}</p>}
-                        </div>
-
-                        <div>
-                            <Label className="mb-2">Furnishing</Label>
-                            <Select
-                                value={data.furnishing}
-                                onValueChange={(v) => setData("furnishing", v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="Select furnishing" /></SelectTrigger>
-                                <SelectContent>
-                                    {enums.furnishings.map((s) => (
-                                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.furnishing && <p className="text-sm text-red-500 mt-1">{errors.furnishing}</p>}
-                        </div>
-
-                        <div>
-                            <Label className="mb-2">Lot type</Label>
-                            <Select
-                                value={data.lot_type}
-                                onValueChange={(v) => setData("lot_type", v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                                <SelectContent>
-                                    {enums.lot_types.map((s) => (
-                                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.lot_type && <p className="text-sm text-red-500 mt-1">{errors.lot_type}</p>}
-                        </div>
-
-                        <div>
-                            <Label htmlFor="bedrooms" className="mb-2">Bedrooms</Label>
-                            <Input
-                                id="bedrooms"
-                                type="number"
-                                min={0}
-                                value={data.bedrooms}
-                                onChange={(e) => setData("bedrooms", e.target.value)}
-                                placeholder="e.g. 3"
-                            />
-                            {errors.bedrooms && <p className="text-sm text-red-500 mt-1">{errors.bedrooms}</p>}
-                        </div>
-
-                        <div>
-                            <Label htmlFor="bathrooms" className="mb-2">Bathrooms</Label>
-                            <Input
-                                id="bathrooms"
-                                type="number"
-                                min={0}
-                                value={data.bathrooms}
-                                onChange={(e) => setData("bathrooms", e.target.value)}
-                                placeholder="e.g. 2"
-                            />
-                            {errors.bathrooms && <p className="text-sm text-red-500 mt-1">{errors.bathrooms}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="images">Images (up to 20)</Label>
-                            <Input
-                                id="images"
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={(e) => onFilesChange(e.target.files)}
-                            />
-                            {errors.images && <p className="text-sm text-red-500 mt-1">{errors.images}</p>}
-                            {errors["images.0"] && <p className="text-sm text-red-500 mt-1">{errors["images.0"]}</p>}
-
-                            {previews.length > 0 && (
-                                <div className="mt-3 grid grid-cols-3 gap-3">
-                                    {previews.map((src, i) => (
-                                        <div key={i} className="overflow-hidden rounded-xl border">
-                                            <img src={src} alt={`preview-${i}`} className="h-28 w-full object-cover" />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </div>
 

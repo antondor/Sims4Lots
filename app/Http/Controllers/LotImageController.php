@@ -12,44 +12,31 @@ class LotImageController extends Controller
     // POST /api/lots/{lot}/images
     public function store(UploadLotImageRequest $request, Lot $lot)
     {
-        // тут можно добавить проверку "текущий юзер == $lot->user_id"
-        // если у тебя уже есть аутентификация
-        // abort_unless(auth()->id() === $lot->user_id, 403);
-
         $file = $request->file('image');
+        $ext  = $file->getClientOriginalExtension();
+        $name = Str::uuid() . '.' . $ext;
+        $dir = "images/lots/{$lot->id}";
 
-        // Папка вида lots/123/...
-        // 'public' говорит S3 сделать объект доступным публично
-        $path = Storage::disk('s3')->putFile(
-            "lots/{$lot->id}",
-            $file,
-            'public'
-        );
+        Storage::disk('s3')->putFileAs($dir, $file, $name);
 
-        // Получаем публично доступный URL
-        $url = Storage::disk('s3')->url($path);
-
-        // позицию либо берём из реквеста, либо ставим в конец
         $position = $request->input('position');
-
         if ($position === null) {
-            $lastPos = $lot->images()->max('position');
-            $position = $lastPos === null ? 0 : $lastPos + 1;
+            $last = $lot->images()->max('position');
+            $position = $last === null ? 0 : $last + 1;
         }
 
         $image = LotImage::create([
             'lot_id'   => $lot->id,
-            'url'      => $url,
-            'position' => $position,
+            'filename' => $name,
+            'position' => (int) $position,
         ]);
 
         return response()->json([
             'status' => 'ok',
             'image'  => $image,
-        ]);
+        ], 201);
     }
 
-    // DELETE /api/lots/{lot}/images/{image}
     public function destroy(Lot $lot, LotImage $image)
     {
         // проверка что эта картинка принадлежит этому лоту

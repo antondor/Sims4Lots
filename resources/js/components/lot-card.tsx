@@ -10,7 +10,6 @@ import { resolveSrc, AVATAR_PLACEHOLDER } from "@/lib";
 
 export function LotCard({ lot }: { lot: Lot }) {
     const userName   = lot.user?.name ?? "Unknown user";
-    const cover = lot.images?.[0]?.url ?? '/placeholder.jpg';
     const userAvatar: string =
         resolveSrc(lot.user?.avatar) ??
         AVATAR_PLACEHOLDER;
@@ -37,24 +36,26 @@ export function LotCard({ lot }: { lot: Lot }) {
 
             <div className="px-4 pb-2">
                 {images.length > 0 ? (
-                    <div className="relative overflow-hidden rounded-lg">
-                        <Carousel className="w-full">
-                            <CarouselContent>
+                    <div className="relative w-full aspect-[16/9] overflow-hidden rounded-xl">
+                        <Carousel className="absolute inset-0">
+                            <CarouselContent className="h-full">
                                 {images.map((img) => (
-                                    <CarouselItem key={img.id} className="basis-full">
+                                    <CarouselItem key={img.id} className="basis-full h-full">
                                         <img
-                                            src={cover}
+                                            src={img.url}
                                             alt={`${lot.name} image ${img.position}`}
-                                            className="block w-full h-64 md:h-80 object-cover"
+                                            className="block h-full w-full object-cover"
                                             loading="lazy"
                                         />
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
+
                             <CarouselPrevious className="left-3 top-1/2 -translate-y-1/2 z-10" />
                             <CarouselNext className="right-3 top-1/2 -translate-y-1/2 z-10" />
                         </Carousel>
                     </div>
+
                 ) : (
                     <div className="w-full h-64 md:h-80 bg-muted/40 rounded-lg grid place-items-center text-sm text-muted-foreground">
                         No images

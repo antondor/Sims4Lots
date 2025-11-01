@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -27,17 +28,21 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     *
-     * @return array<string, mixed>
+     * @param Request $request
+     * @return array|mixed[]
      */
     public function share(Request $request): array
     {
-        return [
-            ...parent::share($request),
-            //
-        ];
+        return array_merge(parent::share($request), [
+            'auth' => fn () => [
+                'user' => $request->user()
+                    ? $request->user()->only('id','name','email')
+                    : null,
+            ],
+            'flash' => [
+                'success' => fn () => session('success'),
+                'error'   => fn () => session('error'),
+            ],
+        ]);
     }
 }

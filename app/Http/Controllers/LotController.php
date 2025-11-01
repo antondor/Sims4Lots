@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Lot;
 use App\Models\LotImage;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -45,10 +47,10 @@ class LotController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $rules = [
             'name'         => ['required','string','max:255'],
             'description'  => ['nullable','string','max:1000'],
-            'creator_id'   => ['required','string','max:255'],
+            'creator_id'   => ['nullable','string','max:255'],
             'creator_link' => ['nullable','url','max:255'],
             'lot_size'     => ['required','in:20x15,30x20,40x30,50x50,64x64'],
             'content_type' => ['required','in:CC,NoCC'],
@@ -56,38 +58,83 @@ class LotController extends Controller
             'lot_type'     => ['required','in:Residential,Community'],
             'bedrooms'     => ['nullable','integer','min:0','max:50'],
             'bathrooms'    => ['nullable','integer','min:0','max:50'],
+            'images'   => ['nullable','array','max:10'],
+            'images.*' => [
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:8192',
+                'dimensions:ratio=16/9,min_width=1280,min_height=720',
+            ],
+        ];
 
-            // файлы:
-            'images'       => ['nullable','array','max:20'],
-            'images.*'     => ['image','mimes:jpg,jpeg,png,webp','max:8192'], // до ~8MB на файл
-        ]);
+        $messages = [
+            'images.array'        => 'Images upload must be an array of files.',
+            'images.max'          => 'Upload no more than :max images at a time.',
+            'images.*.image'      => 'Each file must be an image.',
+            'images.*.mimes'      => 'Supported formats: JPG, JPEG, PNG, or WEBP.',
+            'images.*.max'        => 'Each image must be no larger than 8 MB.',
+            'images.*.dimensions' => 'Each image must be 16:9 and at least 1280×720.',
+        ];
 
-        // временно без auth:
-        $userId = $request->user()->id ?? 1;
+        $attributes = [
+            'images'   => 'images',
+            'images.*' => 'image',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages, $attributes);
+
+        $validator->after(function ($v) use ($request) {
+            $files = $request->file('images') ?? [];
+            $total = is_array($files) ? count($files) : 0;
+
+            // Собираем индексы, заваленные по dimensions
+            $bad = [];
+            foreach ($v->errors()->getMessages() as $key => $msgs) {
+                // ловим "images.N.dimensions"
+                if (str_starts_with($key, 'images.') && str_ends_with($key, '.dimensions')) {
+                    $parts = explode('.', $key); // ['images','N','dimensions']
+                    if (isset($parts[1]) && is_numeric($parts[1])) {
+                        $bad[] = (int) $parts[1];
+                    }
+                }
+            }
+            $bad = array_values(array_unique($bad));
+
+            // Добавляем сводку ТОЛЬКО если:
+            // - есть хотя бы один плохой,
+            // - есть хотя бы один хороший (т.е. не все плохие),
+            // - и ещё нет ошибки на ключе 'images'.
+            if ($total > 0 && count($bad) > 0 && count($bad) < $total && !$v->errors()->has('images')) {
+                sort($bad);
+                $v->errors()->add(
+                    'images',
+                    'Some images are not 16:9 (≥1280×720): ' . implode(', ', $bad) . '.'
+                );
+            }
+        });
+
+        $data = $validator->validate();
 
         $lot = Lot::create([
-            'user_id'      => $userId,
+            'user_id'      => $request->user()->id,
             ...$data,
         ]);
 
-        // Загрузка изображений (если переданы)
         if ($request->hasFile('images')) {
-            $files = $request->file('images'); // File[]|UploadedFile[]
+            /** @var UploadedFile[] $files */
+            $files = $request->file('images');
 
             foreach ($files as $idx => $file) {
-                // составим читаемый путь: images/lots/{lot_id}/{uuid}.{ext}
-                $ext = $file->getClientOriginalExtension();
-                $path = "images/lots/{$lot->id}/".Str::uuid().'.'.$ext;
+                $ext  = $file->getClientOriginalExtension();
+                $dir  = "images/lots/{$lot->id}";
+                $name = \Illuminate\Support\Str::uuid().'.'.$ext;
 
-                // кладём в s3 с публичной видимостью
-                Storage::disk('s3')->put($path, file_get_contents($file), 'public');
-
-                $url = Storage::disk('s3')->url($path);
+                Storage::disk('s3')->putFileAs($dir, $file, $name);
 
                 LotImage::create([
                     'lot_id'   => $lot->id,
-                    'url'      => $url,
-                    'position' => $idx, // порядок как на форме
+                    'filename' => $name,
+                    'position' => $idx,
                 ]);
             }
         }

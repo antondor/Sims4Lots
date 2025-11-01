@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('name');
             $table->string('description')->nullable();
-            $table->string('creator_id');
+            $table->string('creator_id')->nullable();
             $table->string('creator_link')->nullable();
             $table->enum('lot_size', ['20x15','30x20','40x30','50x50','64x64']);
             $table->enum('content_type', ['CC','NoCC']);
@@ -30,10 +30,12 @@ return new class extends Migration
             $table->foreignId('lot_id')
                 ->constrained('lots')
                 ->onDelete('cascade');
-            $table->string('url');
+            $table->string('filename');
             $table->unsignedInteger('position')->default(0);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['lot_id', 'position']);
         });
     }
 
