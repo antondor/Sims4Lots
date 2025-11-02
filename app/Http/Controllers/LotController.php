@@ -24,6 +24,21 @@ class LotController extends Controller
         ]);
     }
 
+    public function view(Lot $lot)
+    {
+        $lot->load([
+            'images' => fn ($q) => $q->orderBy('position'),
+            'user',
+        ]);
+
+        $isOwner = auth()->check() && $lot->user_id === auth()->id();
+
+        return \Inertia\Inertia::render('lots/show', [
+            'lot' => $lot,
+            'isOwner' => $isOwner,
+        ]);
+    }
+
     public function show(Lot $lot)
     {
         $lot->load(['images' => fn ($q) => $q->orderBy('position')]);
@@ -43,6 +58,76 @@ class LotController extends Controller
                 'lot_types'     => ['Residential','Community'],
             ],
         ]);
+    }
+
+    public function edit(Lot $lot)
+    {
+        // разреши только владельцу
+        abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
+
+        $lot->load(['images' => fn($q) => $q->orderBy('position')]);
+
+        return \Inertia\Inertia::render('lots/edit', [
+            'lot' => $lot,
+            'enums' => [
+                'lot_sizes'     => ['20x15','30x20','40x30','50x50','64x64'],
+                'content_types' => ['CC','NoCC'],
+                'furnishings'   => ['Furnished','Unfurnished'],
+                'lot_types'     => ['Residential','Community'],
+            ],
+        ]);
+    }
+
+    public function update(Request $request, Lot $lot)
+    {
+        abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
+
+        $data = $request->validate([
+            'name'         => ['required','string','max:255'],
+            'description'  => ['nullable','string','max:1000'],
+            'creator_id'   => ['nullable','string','max:255'],
+            'creator_link' => ['nullable','url','max:255'],
+            'lot_size'     => ['required','in:20x15,30x20,40x30,50x50,64x64'],
+            'content_type' => ['required','in:CC,NoCC'],
+            'furnishing'   => ['required','in:Furnished,Unfurnished'],
+            'lot_type'     => ['required','in:Residential,Community'],
+            'bedrooms'     => ['nullable','integer','min:0','max:50'],
+            'bathrooms'    => ['nullable','integer','min:0','max:50'],
+            // новые картинки опционально
+            'images'   => ['nullable','array','max:10'],
+            'images.*' => ['image','mimes:jpg,jpeg,png,webp','max:8192','dimensions:ratio=16/9,min_width=1280,min_height=720'],
+        ]);
+
+        $lot->update($data);
+
+        // Пришли новые изображения? — добавим в конец
+        if ($request->hasFile('images')) {
+            $files = array_values($request->file('images'));
+            $start = (int)$lot->images()->max('position') + 1;
+
+            foreach ($files as $i => $file) {
+                $ext  = $file->getClientOriginalExtension();
+                $dir  = "images/lots/{$lot->id}";
+                $name = \Illuminate\Support\Str::uuid().'.'.$ext;
+
+                \Illuminate\Support\Facades\Storage::disk('s3')->putFileAs($dir, $file, $name);
+
+                \App\Models\LotImage::create([
+                    'lot_id'   => $lot->id,
+                    'filename' => $name,
+                    'position' => $start + $i,
+                ]);
+            }
+        }
+
+        return redirect()->route('lots.view', ['lot' => $lot->id])->with('success', 'Lot updated.');
+    }
+
+    public function destroy(Lot $lot)
+    {
+        abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
+        $lot->delete();
+        return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
     }
 
     public function mine()

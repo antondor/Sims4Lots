@@ -46,3 +46,24 @@ export interface LotsFiltersInterface {
     user_id?: number;
     is_closed?: 0 | 1 | "Any";
 }
+
+export type Enums = {
+    lot_sizes: string[];
+    content_types: string[];
+    furnishings: string[];
+    lot_types: string[];
+};
+
+export type FormType = {
+    name: string;
+    description: string | null;
+    creator_id: string | null;
+    creator_link: string | null;
+    lot_size: string;
+    content_type: string;
+    furnishing: string;
+    lot_type: string;
+    bedrooms: number | string;
+    bathrooms: number | string;
+    images: File[];
+};

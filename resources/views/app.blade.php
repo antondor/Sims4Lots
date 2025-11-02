@@ -5,8 +5,9 @@
     <title>Laravel + Inertia</title>
     @viteReactRefresh
     @routes
-    @vite(['resources/js/app.tsx', 'resources/js/app.js'])
+    @vite(['resources/js/app.tsx'])
     @inertiaHead
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
 @inertia

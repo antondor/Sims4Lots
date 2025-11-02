@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadLotImageRequest;
 use App\Models\Lot;
 use App\Models\LotImage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class LotImageController extends Controller
 {
-    // POST /api/lots/{lot}/images
     public function store(UploadLotImageRequest $request, Lot $lot)
     {
         $file = $request->file('image');
@@ -37,34 +39,38 @@ class LotImageController extends Controller
         ], 201);
     }
 
-    public function destroy(Lot $lot, LotImage $image)
+    public function setCover(Request $request, Lot $lot, LotImage $image)
     {
-        // проверка что эта картинка принадлежит этому лоту
-        if ($image->lot_id !== $lot->id) {
-            abort(404);
-        }
+        abort_if($image->lot_id !== $lot->id, 404);
 
-        // По желанию можно удалять сам файл из S3,
-        // Либо оставить, если не хочешь чистить бакет.
-        // Если чистим:
-        //
-        // нам нужно получить key внутри бакета.
-        // У нас в БД хранится полный URL, типа:
-        // https://bucket.s3.region.amazonaws.com/lots/123/asdf.jpg
-        // Нужно вырезать префикс AWS_URL.
-        $bucketUrl = rtrim(config('filesystems.disks.s3.url'), '/'); // env('AWS_URL')
-
-        if ($bucketUrl && str_starts_with($image->url, $bucketUrl)) {
-            $key = ltrim(substr($image->url, strlen($bucketUrl)), '/');
-            if ($key) {
-                Storage::disk('s3')->delete($key);
+        DB::transaction(function () use ($lot, $image) {
+            $others = $lot->images()->where('id', '!=', $image->id)->orderBy('position')->get();
+            $pos = 1;
+            foreach ($others as $img) {
+                $img->update(['position' => $pos++]);
             }
+            $image->update(['position' => 0]);
+        });
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json(['status' => 'ok']);
         }
 
+        return back()->with('success', 'Cover image updated.');
+    }
+
+    public function destroy(Request $request, Lot $lot, LotImage $image)
+    {
+        abort_if($image->lot_id !== $lot->id, 404);
+
+        Storage::disk('s3')->delete($image->s3_key ?? "images/lots/{$lot->id}/{$image->filename}");
         $image->delete();
 
-        return response()->json([
-            'status' => 'ok',
-        ]);
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json(['status' => 'ok']);
+        }
+
+        return back()->with('success', 'Image deleted.');
     }
+
 }

@@ -83,7 +83,7 @@ export function LotCard({ lot }: { lot: Lot }) {
                 </div>
 
                 <Button asChild className="mt-3 w-full">
-                    <a href={route("lots.show", lot.id)}>
+                    <a href={route("lots.view", { lot: lot.id })}>
                         View lot
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </a>
