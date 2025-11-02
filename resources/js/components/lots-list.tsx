@@ -2,35 +2,60 @@ import { Link } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { LotFilters } from "@/components/lot-filters";
 import { LotCard } from "@/components/lot-card";
-import { PaginatedData } from "@/types";
-import { Lot } from "@/types/lots";
+import type { PaginatedData } from "@/types";
+import type { Lot } from "@/types/lots";
 import { DefaultPagination } from "@/components/default-pagination";
-import {route} from "ziggy-js";
+import { route } from "ziggy-js";
+import React from "react";
 
-export const LotsList = ({ lots }: { lots: PaginatedData<Lot> }) => {
+type LotsListProps = {
+    lots: PaginatedData<Lot>;
+    showHeader?: boolean;
+    showFilters?: boolean;
+    showCreateButton?: boolean;
+    title?: string;
+    subtitle?: string;
+};
+
+export const LotsList: React.FC<LotsListProps> = ({
+                                                      lots,
+                                                      showHeader = true,
+                                                      showFilters = true,
+                                                      showCreateButton = true,
+                                                      title = "Lot Gallery",
+                                                      subtitle = "Browse Sims 4 builds and lots",
+                                                  }) => {
     const handleApplyFilters = (filters: any) => {
         console.log("Filters applied:", filters);
     };
 
     return (
         <>
-            <div className="mb-5 flex w-full items-end justify-between gap-4">
-                <h2 className="mt-2 min-w-0">
-          <span className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight">
-            Lot Gallery
-          </span>
-                    <span className="text-muted-foreground block text-sm">
-            Browse Sims 4 builds and lots
-          </span>
-                </h2>
+            {showHeader && (
+                <div className="mb-5 flex w-full items-end justify-between gap-4">
+                    <h2 className="mt-2 min-w-0">
+            <span className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight">
+              {title}
+            </span>
+                        {subtitle && (
+                            <span className="text-muted-foreground block text-sm">
+                {subtitle}
+              </span>
+                        )}
+                    </h2>
 
-                <div className="flex items-center gap-2 shrink-0 self-start">
-                    <Link href={route("lots.create")} className="inline-flex">
-                        <Button size="sm">Create lot</Button>
-                    </Link>
-                    <LotFilters onApply={handleApplyFilters} />
+                    {(showCreateButton || showFilters) && (
+                        <div className="flex items-center gap-2 shrink-0 self-start">
+                            {showCreateButton && (
+                                <Link href={route("lots.create")} className="inline-flex">
+                                    <Button size="sm">Create lot</Button>
+                                </Link>
+                            )}
+                            {showFilters && <LotFilters onApply={handleApplyFilters} />}
+                        </div>
+                    )}
                 </div>
-            </div>
+            )}
 
             {lots.data.length === 0 ? (
                 <p className="text-center">No lots created yet. Be the first to create one!</p>

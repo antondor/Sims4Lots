@@ -1,5 +1,5 @@
 import React from "react";
-import { Head, Link, useForm, usePage } from "@inertiajs/react";
+import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,9 @@ import { route } from "ziggy-js";
 export default function ProfileEdit() {
     const { props } = usePage();
     const user = (props as any).user || (props as any).auth?.user;
+    const pageErrors = ((props as any).errors ?? {}) as Record<string, string>;
 
-    const { data, setData, post, processing, errors, reset, transform } = useForm<{
+    const { data, setData, processing } = useForm<{
         name: string;
         email: string;
         current_password: string;
@@ -36,38 +37,23 @@ export default function ProfileEdit() {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        // PATCH + multipart
-        transform((d) => d); // оставим как есть
-        post(route("profile.update"), {
-            method: "patch",
+
+        const fd = new FormData();
+        fd.append("_method", "PATCH");
+        fd.append("name", data.name ?? "");
+        fd.append("email", data.email ?? "");
+        if (data.current_password) fd.append("current_password", data.current_password);
+        if (data.password) fd.append("password", data.password);
+        if (data.password_confirmation) fd.append("password_confirmation", data.password_confirmation);
+        if (data.avatar) fd.append("avatar", data.avatar);
+
+        router.post(route("profile.update"), fd, {
             forceFormData: true,
+            preserveScroll: true,
             onSuccess: () => {
-                if (preview && preview !== user?.avatar_url) {
-                    URL.revokeObjectURL(preview);
-                }
+                if (preview && preview !== user?.avatar_url) URL.revokeObjectURL(preview);
             },
         });
-    };
-
-    const removeAvatar = () => {
-        const form = document.createElement("form");
-        form.method = "post";
-        form.action = route("profile.avatar.destroy");
-        const csrf = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
-        if (csrf?.content) {
-            const token = document.createElement("input");
-            token.type = "hidden";
-            token.name = "_token";
-            token.value = csrf.content;
-            form.appendChild(token);
-        }
-        const method = document.createElement("input");
-        method.type = "hidden";
-        method.name = "_method";
-        method.value = "DELETE";
-        form.appendChild(method);
-        document.body.appendChild(form);
-        form.submit();
     };
 
     return (
@@ -79,9 +65,7 @@ export default function ProfileEdit() {
                         <h1 className="mb-1 text-2xl font-semibold">Profile</h1>
                         <p className="text-sm text-muted-foreground">Update your account information</p>
                     </div>
-                    <Link href={route("dashboard")}>
-                        <Button variant="outline">Back</Button>
-                    </Link>
+                    <Link href={route("dashboard")}><Button variant="outline">Back</Button></Link>
                 </div>
 
                 <form onSubmit={submit} className="space-y-8">
@@ -96,18 +80,34 @@ export default function ProfileEdit() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="avatar">Avatar</Label>
-                                <Input
-                                    id="avatar"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => onAvatarChange(e.target.files?.[0] ?? null)}
-                                />
-                                {errors.avatar && <p className="text-sm text-red-500">{errors.avatar}</p>}
+                                <Input id="avatar" type="file" accept="image/*" onChange={(e) => onAvatarChange(e.target.files?.[0] ?? null)} />
+                                {pageErrors.avatar && <p className="text-sm text-red-500">{pageErrors.avatar}</p>}
                                 <div className="flex gap-2">
-                                    <Button type="button" variant="secondary" onClick={() => onAvatarChange(null)}>
-                                        Clear
-                                    </Button>
-                                    <Button type="button" variant="ghost" onClick={removeAvatar}>
+                                    <Button type="button" variant="secondary" onClick={() => onAvatarChange(null)}>Clear</Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            const form = document.createElement("form");
+                                            form.method = "post";
+                                            form.action = route("profile.avatar.destroy");
+                                            const csrf = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
+                                            if (csrf?.content) {
+                                                const token = document.createElement("input");
+                                                token.type = "hidden";
+                                                token.name = "_token";
+                                                token.value = csrf.content;
+                                                form.appendChild(token);
+                                            }
+                                            const method = document.createElement("input");
+                                            method.type = "hidden";
+                                            method.name = "_method";
+                                            method.value = "DELETE";
+                                            form.appendChild(method);
+                                            document.body.appendChild(form);
+                                            form.submit();
+                                        }}
+                                    >
                                         Remove current
                                     </Button>
                                 </div>
@@ -119,13 +119,13 @@ export default function ProfileEdit() {
                         <div className="sm:col-span-2">
                             <Label htmlFor="name" className="mb-2">Name</Label>
                             <Input id="name" value={data.name} onChange={(e) => setData("name", e.target.value)} />
-                            {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+                            {pageErrors.name && <p className="mt-1 text-sm text-red-500">{pageErrors.name}</p>}
                         </div>
 
                         <div className="sm:col-span-2">
                             <Label htmlFor="email" className="mb-2">Email</Label>
                             <Input id="email" type="email" value={data.email} onChange={(e) => setData("email", e.target.value)} />
-                            {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                            {pageErrors.email && <p className="mt-1 text-sm text-red-500">{pageErrors.email}</p>}
                         </div>
                     </section>
 
@@ -134,40 +134,23 @@ export default function ProfileEdit() {
                         <div className="grid gap-6 sm:grid-cols-2">
                             <div>
                                 <Label htmlFor="current_password" className="mb-2">Current password</Label>
-                                <Input
-                                    id="current_password"
-                                    type="password"
-                                    value={data.current_password}
-                                    onChange={(e) => setData("current_password", e.target.value)}
-                                />
-                                {errors.current_password && <p className="mt-1 text-sm text-red-500">{errors.current_password}</p>}
+                                <Input id="current_password" type="password" value={data.current_password} onChange={(e) => setData("current_password", e.target.value)} />
+                                {pageErrors.current_password && <p className="mt-1 text-sm text-red-500">{pageErrors.current_password}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="password" className="mb-2">New password</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={data.password}
-                                    onChange={(e) => setData("password", e.target.value)}
-                                />
-                                {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
+                                <Input id="password" type="password" value={data.password} onChange={(e) => setData("password", e.target.value)} />
+                                {pageErrors.password && <p className="mt-1 text-sm text-red-500">{pageErrors.password}</p>}
                             </div>
                             <div className="sm:col-span-2">
                                 <Label htmlFor="password_confirmation" className="mb-2">Confirm new password</Label>
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    value={data.password_confirmation}
-                                    onChange={(e) => setData("password_confirmation", e.target.value)}
-                                />
+                                <Input id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData("password_confirmation", e.target.value)} />
                             </div>
                         </div>
                     </section>
 
                     <div className="flex items-center justify-end gap-3">
-                        <Link href={route("dashboard")} className="inline-flex">
-                            <Button type="button" variant="ghost">Cancel</Button>
-                        </Link>
+                        <Link href={route("dashboard")} className="inline-flex"><Button type="button" variant="ghost">Cancel</Button></Link>
                         <Button type="submit" disabled={processing}>Save changes</Button>
                     </div>
                 </form>

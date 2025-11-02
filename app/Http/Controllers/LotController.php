@@ -24,6 +24,37 @@ class LotController extends Controller
         ]);
     }
 
+    public function search(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        if ($q === '' || mb_strlen($q) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $lots = Lot::query()
+            ->where('name', 'like', "%{$q}%")
+            ->with(['images' => fn ($q) => $q->orderBy('position')->limit(1)])
+            ->orderBy('updated_at', 'desc')
+            ->limit(8)
+            ->get();
+
+        $data = $lots->map(function (Lot $lot) {
+            $cover = $lot->images->first();
+            // Если у LotImage есть аксессор url — он вернется здесь.
+            $coverUrl = $cover?->url ?? asset('images/lot-placeholder.jpg');
+
+            return [
+                'id'        => $lot->id,
+                'name'      => $lot->name,
+                'cover_url' => $coverUrl,
+            ];
+        });
+
+        return response()->json(['data' => $data]);
+    }
+
+
     public function view(Lot $lot)
     {
         $lot->load([

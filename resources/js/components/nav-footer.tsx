@@ -69,7 +69,9 @@ export function NavFooter() {
                     </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent side="top" align="end" className="w-56">
+                <DropdownMenuContent side="top" align="end" className="w-56"
+                                     sideOffset={8}
+                                     alignOffset={-5}>
                     <DropdownMenuLabel className="text-xs text-muted-foreground">Account</DropdownMenuLabel>
 
                     <DropdownMenuItem asChild>

@@ -1,24 +1,18 @@
-import { CircleUserRound, Folder, HeartIcon, Home, SearchIcon, Settings } from "lucide-react";
+import { CircleUserRound, Folder, HeartIcon, Home, Settings } from "lucide-react";
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
+    Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+    SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
     SidebarFooter,
 } from "@/components/ui/sidebar";
 import { NavFooter } from "@/components/nav-footer";
+import { SidebarSearch } from "@/components/sidebar-search";
 
 const items = [
     { title: "Home", url: "/dashboard", icon: Home },
-    { title: "Search", url: "#", icon: SearchIcon },
-    { title: "Account", url: "#", icon: CircleUserRound },
-    { title: "My lots", url: "#", icon: Folder },
-    { title: "Favourites", url: "#", icon: HeartIcon },
-    { title: "Settings", url: "#", icon: Settings },
+    { title: "Profile", url: "/profile", icon: CircleUserRound },
+    { title: "My lots", url: "/lots/mine", icon: Folder },
+    { title: "Favourites", url: "/favourites", icon: HeartIcon },
+    { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -28,6 +22,10 @@ export function AppSidebar() {
                 <SidebarGroup>
                     <SidebarGroupLabel>Application</SidebarGroupLabel>
                     <SidebarGroupContent>
+                        <div className="mb-3">
+                            <SidebarSearch />
+                        </div>
+
                         <SidebarMenu>
                             {items.map((item) => (
                                 <SidebarMenuItem key={item.title}>

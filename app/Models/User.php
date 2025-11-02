@@ -36,19 +36,25 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): string
     {
-        if ($this->avatar && preg_match('~^https?://~i', $this->avatar)) {
-            return $this->avatar;
+        $avatar = $this->avatar;
+
+        // 1) Уже абсолютный?
+        if ($avatar && (str_starts_with($avatar, 'http://') || str_starts_with($avatar, 'https://'))) {
+            return $avatar;
         }
 
-        if ($this->avatar && str_contains($this->avatar, '/')) {
-            return Storage::disk('s3')->url($this->avatar);
+        // 2) Относительный путь (например, "avatars/1/xxx.png" или "storage/xxx.png")
+        if ($avatar && str_contains($avatar, '/')) {
+            // если это файл в s3 /avatars/{id}/..., вернём полный URL
+            return Storage::disk('s3')->url($avatar);
         }
 
-        if ($this->avatar) {
-            return Storage::disk('s3')->url("avatars/{$this->id}/{$this->avatar}");
+        // 3) Только имя файла => лежит в S3: avatars/{id}/{filename}
+        if ($avatar) {
+            return Storage::disk('s3')->url("avatars/{$this->id}/{$avatar}");
         }
 
-        // ← плейсхолдер из public/
+        // Плейсхолдер из public
         return asset('images/profile_avatar_placeholder.png');
     }
 

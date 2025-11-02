@@ -30,7 +30,12 @@ export default function MyLots({ lots }: { lots: PaginatedData<Lot> }) {
                         </Link>
                     </div>
                 ) : (
-                    <LotsList lots={lots} />
+                    <LotsList
+                        lots={lots}
+                        showHeader={false}        // <-- прячем дублирующую шапку
+                        showFilters={false}       // опционально
+                        showCreateButton={false}  // опционально
+                    />
                 )}
             </div>
         </MainLayout>

@@ -10,9 +10,11 @@ import { resolveSrc, AVATAR_PLACEHOLDER } from "@/lib";
 
 export function LotCard({ lot }: { lot: Lot }) {
     const userName   = lot.user?.name ?? "Unknown user";
-    const userAvatar: string =
+    const userAvatar =
+        lot.user?.avatar_url ??
         resolveSrc(lot.user?.avatar) ??
         AVATAR_PLACEHOLDER;
+
     const images = (lot.images ?? [])
         .slice()
         .sort((a, b) => a.position - b.position)

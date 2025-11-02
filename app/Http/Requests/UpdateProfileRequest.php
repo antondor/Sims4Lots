@@ -19,10 +19,10 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name'  => ['required','string','max:255'],
             'email' => ['required','email','max:255', Rule::unique('users','email')->ignore($userId)],
+            'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
             'current_password'      => ['nullable','string'],
             'password'              => ['nullable','string','min:6','max:255','confirmed'],
             'password_confirmation' => ['nullable','string'],
-            'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
         ];
     }
 
