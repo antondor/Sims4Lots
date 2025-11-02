@@ -19,7 +19,7 @@ export function LotCard({ lot }: { lot: Lot }) {
         .map((img) => ({ ...img, url: resolveSrc(img.url) ?? AVATAR_PLACEHOLDER }));
 
     return (
-        <Card className="rounded-xl shadow-lg hover:shadow-xl transition-all w-[350px] md:w-[450px] overflow-hidden">
+        <Card className="w-full max-w-full rounded-xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3 overflow-hidden text-[15px] md:text-base">
                     <img
@@ -36,8 +36,8 @@ export function LotCard({ lot }: { lot: Lot }) {
 
             <div className="px-4 pb-2">
                 {images.length > 0 ? (
-                    <div className="relative w-full aspect-[16/9] overflow-hidden rounded-xl">
-                        <Carousel className="absolute inset-0">
+                    <div className="relative w-full overflow-hidden rounded-xl aspect-[4/3] sm:aspect-[16/9]">
+                        <Carousel className="absolute inset-0 h-full">
                             <CarouselContent className="h-full">
                                 {images.map((img) => (
                                     <CarouselItem key={img.id} className="basis-full h-full">
@@ -50,12 +50,10 @@ export function LotCard({ lot }: { lot: Lot }) {
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
-
                             <CarouselPrevious className="left-3 top-1/2 -translate-y-1/2 z-10" />
                             <CarouselNext className="right-3 top-1/2 -translate-y-1/2 z-10" />
                         </Carousel>
                     </div>
-
                 ) : (
                     <div className="w-full h-64 md:h-80 bg-muted/40 rounded-lg grid place-items-center text-sm text-muted-foreground">
                         No images

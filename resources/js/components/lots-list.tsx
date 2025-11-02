@@ -36,9 +36,11 @@ export const LotsList = ({ lots }: { lots: PaginatedData<Lot> }) => {
                 <p className="text-center">No lots created yet. Be the first to create one!</p>
             ) : (
                 <>
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {lots.data.map((lot) => (
-                            <LotCard key={lot.id} lot={lot} />
+                            <div key={lot.id} className="min-w-0">
+                                <LotCard lot={lot} />
+                            </div>
                         ))}
                     </div>
 

@@ -1,5 +1,4 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
-
+import { CircleUserRound, Folder, HeartIcon, Home, SearchIcon, Settings } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -9,36 +8,18 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "@/components/ui/sidebar"
+    SidebarFooter,
+} from "@/components/ui/sidebar";
+import { NavFooter } from "@/components/nav-footer";
 
-// Menu items.
 const items = [
-    {
-        title: "Home",
-        url: "#",
-        icon: Home,
-    },
-    {
-        title: "Inbox",
-        url: "#",
-        icon: Inbox,
-    },
-    {
-        title: "Calendar",
-        url: "#",
-        icon: Calendar,
-    },
-    {
-        title: "Search",
-        url: "#",
-        icon: Search,
-    },
-    {
-        title: "Settings",
-        url: "#",
-        icon: Settings,
-    },
-]
+    { title: "Home", url: "/dashboard", icon: Home },
+    { title: "Search", url: "#", icon: SearchIcon },
+    { title: "Account", url: "#", icon: CircleUserRound },
+    { title: "My lots", url: "#", icon: Folder },
+    { title: "Favourites", url: "#", icon: HeartIcon },
+    { title: "Settings", url: "#", icon: Settings },
+];
 
 export function AppSidebar() {
     return (
@@ -62,6 +43,16 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+
+            {typeof SidebarFooter !== "undefined" ? (
+                <SidebarFooter>
+                    <NavFooter />
+                </SidebarFooter>
+            ) : (
+                <div className="mt-auto border-t">
+                    <NavFooter />
+                </div>
+            )}
         </Sidebar>
-    )
+    );
 }

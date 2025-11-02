@@ -45,6 +45,20 @@ class LotController extends Controller
         ]);
     }
 
+    public function mine()
+    {
+        $userId = request()->user()->id;
+
+        return Inertia::render('lots/mine', [
+            'lots' => Lot::query()
+                ->where('user_id', $userId)
+                ->with(['images', 'user'])
+                ->orderByDesc('created_at')
+                ->paginate(9)
+                ->withQueryString(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $rules = [
@@ -87,12 +101,10 @@ class LotController extends Controller
             $files = $request->file('images') ?? [];
             $total = is_array($files) ? count($files) : 0;
 
-            // Собираем индексы, заваленные по dimensions
             $bad = [];
             foreach ($v->errors()->getMessages() as $key => $msgs) {
-                // ловим "images.N.dimensions"
                 if (str_starts_with($key, 'images.') && str_ends_with($key, '.dimensions')) {
-                    $parts = explode('.', $key); // ['images','N','dimensions']
+                    $parts = explode('.', $key);
                     if (isset($parts[1]) && is_numeric($parts[1])) {
                         $bad[] = (int) $parts[1];
                     }
@@ -100,10 +112,6 @@ class LotController extends Controller
             }
             $bad = array_values(array_unique($bad));
 
-            // Добавляем сводку ТОЛЬКО если:
-            // - есть хотя бы один плохой,
-            // - есть хотя бы один хороший (т.е. не все плохие),
-            // - и ещё нет ошибки на ключе 'images'.
             if ($total > 0 && count($bad) > 0 && count($bad) < $total && !$v->errors()->has('images')) {
                 sort($bad);
                 $v->errors()->add(
