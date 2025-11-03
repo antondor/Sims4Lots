@@ -8,7 +8,7 @@ import { NavFooter } from "@/components/nav-footer";
 import { SidebarSearch } from "@/components/sidebar-search";
 
 const items = [
-    { title: "Home", url: "/dashboard", icon: Home },
+    { title: "Dashboard", url: "/dashboard", icon: Home },
     { title: "Profile", url: "/profile", icon: CircleUserRound },
     { title: "My lots", url: "/lots/mine", icon: Folder },
     { title: "Favourites", url: "/favourites", icon: HeartIcon },

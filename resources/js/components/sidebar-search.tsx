@@ -43,7 +43,6 @@ export function SidebarSearch() {
     };
 
     const onBlur = () => {
-        // чуть отложим, чтобы клик по ссылке успел сработать
         setTimeout(() => setOpen(false), 120);
     };
 
@@ -54,7 +53,7 @@ export function SidebarSearch() {
                 onChange={onChange}
                 onFocus={() => q.trim().length >= 2 && results.length > 0 && setOpen(true)}
                 onBlur={onBlur}
-                placeholder="Search lots..."
+                placeholder="Search..."
             />
             {open && (
                 <div className="absolute left-0 right-0 z-50 mt-2 max-h-80 overflow-auto rounded-md border bg-background shadow">

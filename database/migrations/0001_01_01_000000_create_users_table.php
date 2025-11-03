@@ -18,6 +18,9 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('avatar')->nullable();
+            $table->text('about')->nullable();
+            $table->string('external_url')->nullable();
+            $table->string('sims_gallery_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

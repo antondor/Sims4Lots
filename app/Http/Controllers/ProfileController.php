@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateProfileRequest;
+use App\Models\Lot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,32 @@ class ProfileController extends Controller
                 'avatar'     => $request->user()->avatar,
                 'avatar_url' => $request->user()->avatar_url,
             ],
+        ]);
+    }
+
+    public function show(Request $request)
+    {
+        $user = $request->user();
+
+        $lotsCount = Lot::where('user_id', $user->id)->count();
+
+        $favouritesCount = 0;
+
+        $latestLots = Lot::with(['images','user'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->take(6)
+            ->get();
+
+        return Inertia::render('profile/show', [
+            'user' => $request->user()->only([
+                'id','name','avatar_url','about','external_url','sims_gallery_id','created_at'
+            ]),
+            'stats' => [
+                'lots' => $lotsCount,
+                'favourites' => $favouritesCount,
+            ],
+            'latestLots' => $latestLots,
         ]);
     }
 

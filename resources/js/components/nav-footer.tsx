@@ -75,7 +75,7 @@ export function NavFooter() {
                     <DropdownMenuLabel className="text-xs text-muted-foreground">Account</DropdownMenuLabel>
 
                     <DropdownMenuItem asChild>
-                        <Link href={route("profile.edit")}>
+                        <Link href={route("profile.show")}>
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
                         </Link>

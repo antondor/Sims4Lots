@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import {Link, usePage} from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { LotFilters } from "@/components/lot-filters";
 import { LotCard } from "@/components/lot-card";
@@ -28,6 +28,8 @@ export const LotsList: React.FC<LotsListProps> = ({
     const handleApplyFilters = (filters: any) => {
         console.log("Filters applied:", filters);
     };
+    const { props } = usePage();
+    const user = (props as any)?.auth?.user;
 
     return (
         <>
@@ -46,7 +48,7 @@ export const LotsList: React.FC<LotsListProps> = ({
 
                     {(showCreateButton || showFilters) && (
                         <div className="flex items-center gap-2 shrink-0 self-start">
-                            {showCreateButton && (
+                            {(showCreateButton && user) && (
                                 <Link href={route("lots.create")} className="inline-flex">
                                     <Button size="sm">Create lot</Button>
                                 </Link>

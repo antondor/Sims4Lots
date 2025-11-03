@@ -6,10 +6,15 @@ use App\Http\Controllers\LotController;
 use App\Http\Controllers\LotImageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\UserPublicController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
 Route::get('/dashboard', [LotController::class, 'index'])->name('dashboard');
+
+Route::get('/u/{user}', [UserPublicController::class, 'show'])
+    ->whereNumber('user')
+    ->name('users.show');
 
 Route::get('/lots/create', [LotController::class, 'create'])
     ->middleware('auth')
@@ -52,7 +57,8 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('lot')
         ->name('lots.favorite.toggle');
 
-    Route::get('/profile',               [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile',               [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit',               [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',             [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile/avatar',     [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react"; // ⬅️ добавил useEffect
 import { Head, Link, useForm } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,18 @@ export default function CreateLot({ enums }: { enums: Enums }) {
     });
 
     const [previews, setPreviews] = useState<string[]>([]);
+
+    // ⬇️ состояние "Community"
+    const isCommunity = data.lot_type === "Community";
+
+    // ⬇️ при выборе "Community" чистим спальни/ванные
+    useEffect(() => {
+        if (isCommunity) {
+            setData("bedrooms", "");
+            setData("bathrooms", "");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isCommunity]);
 
     const onFilesChange = (files: FileList | null) => {
         const arr = files ? Array.from(files) : [];
@@ -163,7 +175,8 @@ export default function CreateLot({ enums }: { enums: Enums }) {
                             type="number"
                             value={String(data.bedrooms)}
                             onChange={(v) => setData("bedrooms", v)}
-                            placeholder="e.g. 3"
+                            placeholder={isCommunity ? "N/A for Community" : "e.g. 3"}
+                            disabled={isCommunity}
                             error={errors.bedrooms as string | undefined}
                         />
 
@@ -173,7 +186,8 @@ export default function CreateLot({ enums }: { enums: Enums }) {
                             type="number"
                             value={String(data.bathrooms)}
                             onChange={(v) => setData("bathrooms", v)}
-                            placeholder="e.g. 2"
+                            placeholder={isCommunity ? "N/A for Community" : "e.g. 2"}
+                            disabled={isCommunity}
                             error={errors.bathrooms as string | undefined}
                         />
 

@@ -13,10 +13,12 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'avatar',
+        'name','email','password','avatar',
+        'about','external_url','sims_gallery_id',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
     ];
 
     protected $hidden = [

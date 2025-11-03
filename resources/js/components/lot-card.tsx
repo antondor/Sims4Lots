@@ -5,7 +5,8 @@ import type { Lot } from "@/types/lots";
 import {
     Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
 } from "@/components/ui/carousel";
-import {route} from "ziggy-js";
+import { Link } from "@inertiajs/react";
+import { route } from "ziggy-js";
 import { resolveSrc, AVATAR_PLACEHOLDER } from "@/lib";
 
 export function LotCard({ lot }: { lot: Lot }) {
@@ -20,18 +21,51 @@ export function LotCard({ lot }: { lot: Lot }) {
         .sort((a, b) => a.position - b.position)
         .map((img) => ({ ...img, url: resolveSrc(img.url) ?? AVATAR_PLACEHOLDER }));
 
+    const lotUrl  = route("lots.view", { lot: lot.id });
+    const userUrl = lot.user?.id ? route("users.show", { user: lot.user.id }) : null;
+
     return (
         <Card className="w-full max-w-full rounded-xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3 overflow-hidden text-[15px] md:text-base">
-                    <img
-                        src={userAvatar}
-                        alt={userName}
-                        className="h-10 w-10 rounded-full object-cover shrink-0"
-                    />
-                    <div className="min-w-0">
-                        <div className="truncate">{lot.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">{userName}</div>
+                    {userUrl ? (
+                        <Link href={userUrl} aria-label={`Open profile of ${userName}`}>
+                            <img
+                                src={userAvatar}
+                                alt={userName}
+                                className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-border hover:opacity-90 transition"
+                            />
+                        </Link>
+                    ) : (
+                        <img
+                            src={userAvatar}
+                            alt={userName}
+                            className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-border"
+                        />
+                    )}
+
+                    <div className="min-w-0 flex flex-col">
+                        <Link
+                            href={lotUrl}
+                            className="truncate hover:underline"
+                            title={lot.name}
+                            aria-label={`Open lot ${lot.name}`}
+                        >
+                            {lot.name}
+                        </Link>
+
+                        {userUrl ? (
+                            <Link
+                                href={userUrl}
+                                className="text-xs text-muted-foreground truncate hover:underline"
+                                aria-label={`Open profile of ${userName}`}
+                                title={userName}
+                            >
+                                {userName}
+                            </Link>
+                        ) : (
+                            <div className="text-xs text-muted-foreground truncate">{userName}</div>
+                        )}
                     </div>
                 </CardTitle>
             </CardHeader>
@@ -85,10 +119,10 @@ export function LotCard({ lot }: { lot: Lot }) {
                 </div>
 
                 <Button asChild className="mt-3 w-full">
-                    <a href={route("lots.view", { lot: lot.id })}>
+                    <Link href={lotUrl}>
                         View lot
                         <ArrowRight className="ml-2 h-4 w-4" />
-                    </a>
+                    </Link>
                 </Button>
             </CardContent>
         </Card>
