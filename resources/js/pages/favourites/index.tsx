@@ -15,7 +15,7 @@ export default function FavouritesIndex({ lots }: { lots: PaginatedData<Lot> }) 
                 <div className="mb-6 flex items-center justify-between">
                     <div>
                         <h1 className="mb-1 text-2xl font-semibold">Favourites</h1>
-                        <p className="text-sm text-muted-foreground">Lots you’ve saved</p>
+                        <p className="text-sm text-muted-foreground">Lots you’ve liked</p>
                     </div>
                     <Link href={route("lots.create")}>
                         <Button>Create lot</Button>
@@ -30,7 +30,12 @@ export default function FavouritesIndex({ lots }: { lots: PaginatedData<Lot> }) 
                         </Link>
                     </div>
                 ) : (
-                    <LotsList lots={lots} />
+                    <LotsList
+                        lots={lots}
+                        showHeader={false}
+                        showFilters={false}
+                        showCreateButton={false}
+                    />
                 )}
             </div>
         </MainLayout>

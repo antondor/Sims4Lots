@@ -25,25 +25,24 @@ class Lot extends Model
         'bathrooms',
     ];
 
-    // Один лот -> много картинок
     public function images()
     {
         return $this->hasMany(LotImage::class)->orderBy('position');
     }
 
-    // Если хочешь быстро получать "обложку" (первая картинка)
     public function coverImage()
     {
-        return $this->hasOne(LotImage::class)->orderBy('position');
+        return $this->hasOne(LotImage::class)
+            ->orderByDesc('is_cover')
+            ->orderBy('position');
     }
 
-    // Если у тебя есть App\Models\User (стандартный User из Laravel)
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function favoredBy()
+    public function favoritedBy()
     {
         return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
     }

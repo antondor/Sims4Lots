@@ -9,27 +9,20 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserPublicController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('dashboard'));
+Route::redirect('/', '/dashboard');
+
 Route::get('/dashboard', [LotController::class, 'index'])->name('dashboard');
 
 Route::get('/u/{user}', [UserPublicController::class, 'show'])
     ->whereNumber('user')
     ->name('users.show');
 
-Route::get('/lots/create', [LotController::class, 'create'])
-    ->middleware('auth')
-    ->name('lots.create');
-
-Route::get('/lots/mine', [LotController::class, 'mine'])
-    ->middleware('auth')
-    ->name('lots.mine');
-
-Route::get('/lots/search', [\App\Http\Controllers\LotController::class, 'search'])
-    ->name('lots.search');
-
-Route::get('/lots/{lot}', [LotController::class, 'view'])
-    ->whereNumber('lot')
-    ->name('lots.view');
+Route::prefix('lots')->name('lots.')->group(function () {
+    Route::get('search', [LotController::class, 'search'])->name('search');
+    Route::get('{lot}', [LotController::class, 'view'])
+        ->whereNumber('lot')
+        ->name('view');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/login',    [AuthController::class, 'showLogin'])->name('login');
@@ -40,29 +33,36 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::post('/lots',                 [LotController::class, 'store'])->name('lots.store');
-    Route::get('/lots/{lot}/edit',       [LotController::class, 'edit'])->whereNumber('lot')->name('lots.edit');
-    Route::patch('/lots/{lot}',          [LotController::class, 'update'])->whereNumber('lot')->name('lots.update');
-    Route::delete('/lots/{lot}',         [LotController::class, 'destroy'])->whereNumber('lot')->name('lots.destroy');
 
-    Route::delete('/lots/{lot}/images/{image}', [LotImageController::class, 'destroy'])
-        ->whereNumber('lot')->whereNumber('image')
-        ->name('lots.images.destroy');
+    Route::prefix('lots')->name('lots.')->group(function () {
+        Route::get('create', [LotController::class, 'create'])->name('create');
+        Route::get('mine',   [LotController::class, 'mine'])->name('mine');
 
-    Route::patch('/lots/{lot}/images/{image}/cover', [LotImageController::class, 'setCover'])
-        ->whereNumber('lot')->whereNumber('image')
-        ->name('lots.images.cover');
+        Route::post('',      [LotController::class, 'store'])->name('store');
+        Route::get('{lot}/edit', [LotController::class, 'edit'])->whereNumber('lot')->name('edit');
+        Route::patch('{lot}',    [LotController::class, 'update'])->whereNumber('lot')->name('update');
+        Route::delete('{lot}',   [LotController::class, 'destroy'])->whereNumber('lot')->name('destroy');
 
-    Route::post('/lots/{lot}/favorite',  [FavoriteController::class, 'toggle'])
-        ->whereNumber('lot')
-        ->name('lots.favorite.toggle');
+        Route::prefix('{lot}/images')->whereNumber('lot')->group(function () {
+            Route::delete('{image}',        [LotImageController::class, 'destroy'])
+                ->whereNumber('image')->name('images.destroy');
 
-    Route::get('/profile',               [ProfileController::class, 'show'])->name('profile.show');
-    Route::get('/profile/edit',               [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile',             [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile/avatar',     [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
+            Route::patch('{image}/cover',   [LotImageController::class, 'setCover'])
+                ->whereNumber('image')->name('images.cover');
+        });
 
-    Route::get('/favourites',            [FavoriteController::class, 'index'])->name('favourites.index');
-    Route::get('/settings',              [SettingsController::class, 'index'])->name('settings');
-    Route::post('/logout',               [AuthController::class, 'logout'])->name('logout');
+        Route::post('{lot}/favorite', [FavoriteController::class, 'toggle'])
+            ->whereNumber('lot')->name('favorite.toggle');
+    });
+
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('',        [ProfileController::class, 'show'])->name('show');
+        Route::get('edit',    [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('',      [ProfileController::class, 'update'])->name('update');
+        Route::delete('avatar',[ProfileController::class, 'destroyAvatar'])->name('avatar.destroy');
+    });
+
+    Route::get('/favourites', [FavoriteController::class, 'index'])->name('favourites.index');
+    Route::get('/settings',   [SettingsController::class, 'index'])->name('settings');
+    Route::post('/logout',    [AuthController::class, 'logout'])->name('logout');
 });

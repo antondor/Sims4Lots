@@ -16,22 +16,21 @@ export interface Lot {
     content_type: ContentType;
     furnishing: Furnishing;
     lot_type: LotType;
-    bedrooms: number | null;   // tinyint nullable
-    bathrooms: number | null;  // tinyint nullable
-    created_at: string; // ISO datetime
-    updated_at: string; // ISO datetime
+    bedrooms: number | null;
+    bathrooms: number | null;
+    created_at: string;
+    updated_at: string;
+    user?: { id: number; name: string; avatar?: string | null; avatar_url?: string };
     images?: LotImage[];
-    user?: User;
+    cover_image?: LotImage | null;
 }
 
-export interface LotImage {
+export type LotImage = {
     id: number;
-    lot_id: number;
     url: string;
-    position: number;  // unsigned int, default 0
-    created_at: string; // ISO datetime
-    updated_at: string; // ISO datetime
-}
+    position: number;
+    is_cover?: boolean;
+};
 
 export interface LotsFiltersInterface {
     query?: string;

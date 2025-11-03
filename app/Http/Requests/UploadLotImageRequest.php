@@ -16,8 +16,8 @@ class UploadLotImageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'image' => ['required', 'image', 'max:5120'], // 5MB
-            'position' => ['nullable', 'integer', 'min:0'],
+            'image' => ['required','file'],
+            'position' => ['nullable','integer','min:0'],
         ];
     }
 }

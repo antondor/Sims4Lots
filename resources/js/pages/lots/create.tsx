@@ -193,8 +193,8 @@ export default function CreateLot({ enums }: { enums: Enums }) {
 
                         <div className="sm:col-span-2">
                             <ImageUpload
-                                label="Images — 16:9 (≥1280×720), up to 10 files"
-                                helper="Upload widescreen screenshots; other ratios will be rejected."
+                                label="Images — up to 10 files"
+                                helper="Tip: 16:9 looks best in cards and cover slots"
                                 onChange={onFilesChange}
                                 errors={errors}
                                 previews={previews}

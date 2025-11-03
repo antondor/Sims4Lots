@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->string('creator_id')->nullable();
             $table->string('creator_link')->nullable();
+            $table->string('download_link')->nullable();
             $table->enum('lot_size', ['20x15','30x20','40x30','50x50','64x64']);
             $table->enum('content_type', ['CC','NoCC']);
             $table->enum('furnishing', ['Furnished','Unfurnished']);

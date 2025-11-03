@@ -63,9 +63,9 @@ export function ExistingImagesGrid({ lotId, images, badIds = [], errorMessages =
 
                             {isCover && (
                                 <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-amber-500/90 px-2 py-0.5 text-xs font-medium text-white shadow">
-                  <Star className="h-3.5 w-3.5" />
-                  Cover
-                </span>
+                                  <Star className="h-3.5 w-3.5" />
+                                  Cover
+                                </span>
                             )}
 
                             <div className="absolute right-2 top-2 flex gap-2 opacity-0 transition group-hover:opacity-100">

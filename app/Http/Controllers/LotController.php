@@ -10,24 +10,55 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class LotController extends Controller
 {
+    private const LOT_SIZES     = ['20x15','30x20','40x30','50x50','64x64'];
+    private const CONTENT_TYPES = ['CC','NoCC'];
+    private const FURNISHINGS   = ['Furnished','Unfurnished'];
+    private const LOT_TYPES     = ['Residential','Community'];
+
     public function index()
     {
-        return Inertia::render('dashboard', [
-            'lots' => Lot::query()
-                ->orderByRaw('CASE WHEN id = 1 THEN 0 ELSE 1 END')
-                ->orderBy('updated_at', 'asc')
-                ->with(['images', 'user'])
-                ->paginate(9),
-        ]);
+        $base = Lot::query()
+            ->orderByRaw('CASE WHEN id = 1 THEN 0 ELSE 1 END')
+            ->orderBy('updated_at', 'asc')
+            ->with(['images','user']);
+
+        $lots = $this->attachFavFlag($base)
+            ->paginate(9)
+            ->withQueryString();
+
+        return Inertia::render('dashboard', ['lots' => $lots]);
+    }
+
+    private function attachFavFlag(Builder $query): Builder
+    {
+        if (empty($query->getQuery()->columns)) {
+            $query->select('lots.*');
+        }
+
+        $uid = auth()->id();
+
+        if (!$uid) {
+            return $query->addSelect(DB::raw('0 as is_favorited'));
+        }
+
+        return $query->addSelect(DB::raw(
+            'EXISTS (
+            select 1
+            from favorites
+            where favorites.lot_id = lots.id
+              and favorites.user_id = ' . (int) $uid . '
+        ) as is_favorited'
+        ));
     }
 
     public function search(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
-
         if ($q === '' || mb_strlen($q) < 2) {
             return response()->json(['data' => []]);
         }
@@ -41,9 +72,7 @@ class LotController extends Controller
 
         $data = $lots->map(function (Lot $lot) {
             $cover = $lot->images->first();
-            // Если у LotImage есть аксессор url — он вернется здесь.
             $coverUrl = $cover?->url ?? asset('images/lot-placeholder.jpg');
-
             return [
                 'id'        => $lot->id,
                 'name'      => $lot->name,
@@ -54,58 +83,43 @@ class LotController extends Controller
         return response()->json(['data' => $data]);
     }
 
-
     public function view(Lot $lot)
     {
-        $lot->load([
-            'images' => fn ($q) => $q->orderBy('position'),
-            'user',
-        ]);
+        $lot->load(['images' => fn ($q) => $q->orderBy('position'), 'user']);
 
         $isOwner = auth()->check() && $lot->user_id === auth()->id();
+        $isFavorited = auth()->check()
+            ? auth()->user()->favoriteLots()->where('lot_id', $lot->id)->exists()
+            : false;
 
-        return \Inertia\Inertia::render('lots/show', [
+        return Inertia::render('lots/show', [
             'lot' => $lot,
             'isOwner' => $isOwner,
+            'isFavorited' => $isFavorited,
         ]);
     }
+
 
     public function show(Lot $lot)
     {
         $lot->load(['images' => fn ($q) => $q->orderBy('position')]);
-
-        return response()->json([
-            'lot' => $lot,
-        ]);
+        return response()->json(['lot' => $lot]);
     }
 
     public function create()
     {
-        return Inertia::render('lots/create', [
-            'enums' => [
-                'lot_sizes'     => ['20x15','30x20','40x30','50x50','64x64'],
-                'content_types' => ['CC','NoCC'],
-                'furnishings'   => ['Furnished','Unfurnished'],
-                'lot_types'     => ['Residential','Community'],
-            ],
-        ]);
+        return Inertia::render('lots/create', ['enums' => $this->enums()]);
     }
 
     public function edit(Lot $lot)
     {
-        // разреши только владельцу
         abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
 
         $lot->load(['images' => fn($q) => $q->orderBy('position')]);
 
-        return \Inertia\Inertia::render('lots/edit', [
+        return Inertia::render('lots/edit', [
             'lot' => $lot,
-            'enums' => [
-                'lot_sizes'     => ['20x15','30x20','40x30','50x50','64x64'],
-                'content_types' => ['CC','NoCC'],
-                'furnishings'   => ['Furnished','Unfurnished'],
-                'lot_types'     => ['Residential','Community'],
-            ],
+            'enums' => $this->enums(),
         ]);
     }
 
@@ -113,25 +127,10 @@ class LotController extends Controller
     {
         abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
 
-        $data = $request->validate([
-            'name'         => ['required','string','max:255'],
-            'description'  => ['nullable','string','max:1000'],
-            'creator_id'   => ['nullable','string','max:255'],
-            'creator_link' => ['nullable','url','max:255'],
-            'lot_size'     => ['required','in:20x15,30x20,40x30,50x50,64x64'],
-            'content_type' => ['required','in:CC,NoCC'],
-            'furnishing'   => ['required','in:Furnished,Unfurnished'],
-            'lot_type'     => ['required','in:Residential,Community'],
-            'bedrooms'     => ['nullable','integer','min:0','max:50'],
-            'bathrooms'    => ['nullable','integer','min:0','max:50'],
-            // новые картинки опционально
-            'images'   => ['nullable','array','max:10'],
-            'images.*' => ['image','mimes:jpg,jpeg,png,webp','max:8192','dimensions:ratio=16/9,min_width=1280,min_height=720'],
-        ]);
+        $data = $request->validate($this->rules(true));
 
         $lot->update($data);
 
-        // Пришли новые изображения? — добавим в конец
         if ($request->hasFile('images')) {
             $files = array_values($request->file('images'));
             $start = (int)$lot->images()->max('position') + 1;
@@ -139,11 +138,11 @@ class LotController extends Controller
             foreach ($files as $i => $file) {
                 $ext  = $file->getClientOriginalExtension();
                 $dir  = "images/lots/{$lot->id}";
-                $name = \Illuminate\Support\Str::uuid().'.'.$ext;
+                $name = Str::uuid().'.'.$ext;
 
-                \Illuminate\Support\Facades\Storage::disk('s3')->putFileAs($dir, $file, $name);
+                Storage::disk('s3')->putFileAs($dir, $file, $name);
 
-                \App\Models\LotImage::create([
+                LotImage::create([
                     'lot_id'   => $lot->id,
                     'filename' => $name,
                     'position' => $start + $i,
@@ -154,104 +153,42 @@ class LotController extends Controller
         return redirect()->route('lots.view', ['lot' => $lot->id])->with('success', 'Lot updated.');
     }
 
-    public function destroy(Lot $lot)
-    {
-        abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
-        $lot->delete();
-        return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
-    }
-
     public function mine()
     {
         $userId = request()->user()->id;
 
-        return Inertia::render('lots/mine', [
-            'lots' => Lot::query()
-                ->where('user_id', $userId)
-                ->with(['images', 'user'])
-                ->orderByDesc('created_at')
-                ->paginate(9)
-                ->withQueryString(),
-        ]);
+        $base = Lot::query()
+            ->where('user_id', $userId)
+            ->with([
+                'coverImage:id,lot_id,filename,position,is_cover',
+                'user:id,name,avatar',
+            ])
+            ->orderByDesc('created_at');
+
+        $lots = $this->attachFavFlag($base)
+            ->paginate(9)
+            ->withQueryString();
+
+        return Inertia::render('lots/mine', ['lots' => $lots]);
     }
 
     public function store(Request $request)
     {
-        $rules = [
-            'name'         => ['required','string','max:255'],
-            'description'  => ['nullable','string','max:1000'],
-            'creator_id'   => ['nullable','string','max:255'],
-            'creator_link' => ['nullable','url','max:255'],
-            'lot_size'     => ['required','in:20x15,30x20,40x30,50x50,64x64'],
-            'content_type' => ['required','in:CC,NoCC'],
-            'furnishing'   => ['required','in:Furnished,Unfurnished'],
-            'lot_type'     => ['required','in:Residential,Community'],
-            'bedrooms'     => ['nullable','integer','min:0','max:50'],
-            'bathrooms'    => ['nullable','integer','min:0','max:50'],
-            'images'   => ['nullable','array','max:10'],
-            'images.*' => [
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:8192',
-                'dimensions:ratio=16/9,min_width=1280,min_height=720',
-            ],
-        ];
-
-        $messages = [
-            'images.array'        => 'Images upload must be an array of files.',
-            'images.max'          => 'Upload no more than :max images at a time.',
-            'images.*.image'      => 'Each file must be an image.',
-            'images.*.mimes'      => 'Supported formats: JPG, JPEG, PNG, or WEBP.',
-            'images.*.max'        => 'Each image must be no larger than 8 MB.',
-            'images.*.dimensions' => 'Each image must be 16:9 and at least 1280×720.',
-        ];
-
-        $attributes = [
-            'images'   => 'images',
-            'images.*' => 'image',
-        ];
-
-        $validator = Validator::make($request->all(), $rules, $messages, $attributes);
-
-        $validator->after(function ($v) use ($request) {
-            $files = $request->file('images') ?? [];
-            $total = is_array($files) ? count($files) : 0;
-
-            $bad = [];
-            foreach ($v->errors()->getMessages() as $key => $msgs) {
-                if (str_starts_with($key, 'images.') && str_ends_with($key, '.dimensions')) {
-                    $parts = explode('.', $key);
-                    if (isset($parts[1]) && is_numeric($parts[1])) {
-                        $bad[] = (int) $parts[1];
-                    }
-                }
-            }
-            $bad = array_values(array_unique($bad));
-
-            if ($total > 0 && count($bad) > 0 && count($bad) < $total && !$v->errors()->has('images')) {
-                sort($bad);
-                $v->errors()->add(
-                    'images',
-                    'Some images are not 16:9 (≥1280×720): ' . implode(', ', $bad) . '.'
-                );
-            }
-        });
-
-        $data = $validator->validate();
+        $data = Validator::make($request->all(), $this->rules(true))
+            ->validate();
 
         $lot = Lot::create([
-            'user_id'      => $request->user()->id,
+            'user_id' => $request->user()->id,
             ...$data,
         ]);
 
         if ($request->hasFile('images')) {
             /** @var UploadedFile[] $files */
             $files = $request->file('images');
-
             foreach ($files as $idx => $file) {
                 $ext  = $file->getClientOriginalExtension();
                 $dir  = "images/lots/{$lot->id}";
-                $name = \Illuminate\Support\Str::uuid().'.'.$ext;
+                $name = Str::uuid().'.'.$ext;
 
                 Storage::disk('s3')->putFileAs($dir, $file, $name);
 
@@ -263,8 +200,46 @@ class LotController extends Controller
             }
         }
 
-        return redirect()
-            ->route('dashboard')
-            ->with('success', 'Lot created successfully.');
+        return redirect()->route('dashboard')->with('success', 'Lot created successfully.');
+    }
+
+    public function destroy(Lot $lot)
+    {
+        abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
+        $lot->delete();
+        return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
+    }
+
+    private function enums(): array
+    {
+        return [
+            'lot_sizes'     => self::LOT_SIZES,
+            'content_types' => self::CONTENT_TYPES,
+            'furnishings'   => self::FURNISHINGS,
+            'lot_types'     => self::LOT_TYPES,
+        ];
+    }
+
+    private function rules(bool $withImages = false): array
+    {
+        $rules = [
+            'name'         => ['required','string','max:255'],
+            'description'  => ['nullable','string','max:1000'],
+            'creator_id'   => ['nullable','string','max:255'],
+            'creator_link' => ['nullable','url','max:255'],
+            'lot_size'     => ['required','in:'.implode(',', self::LOT_SIZES)],
+            'content_type' => ['required','in:'.implode(',', self::CONTENT_TYPES)],
+            'furnishing'   => ['required','in:'.implode(',', self::FURNISHINGS)],
+            'lot_type'     => ['required','in:'.implode(',', self::LOT_TYPES)],
+            'bedrooms'     => ['nullable','integer','min:0','max:50'],
+            'bathrooms'    => ['nullable','integer','min:0','max:50'],
+        ];
+
+        if ($withImages) {
+            $rules['images'] = ['nullable','array','max:10'];
+            $rules['images.*'] = [];
+        }
+
+        return $rules;
     }
 }
