@@ -21,6 +21,7 @@ export default function CreateLot({ enums }: { enums: Enums }) {
         description: string | null;
         creator_id: string;
         creator_link: string | null;
+        download_link: string | null;
         lot_size: string;
         content_type: string;
         furnishing: string;
@@ -33,6 +34,7 @@ export default function CreateLot({ enums }: { enums: Enums }) {
         description: "",
         creator_id: "",
         creator_link: "",
+        download_link: "",
         lot_size: enums.lot_sizes[0] ?? "20x15",
         content_type: enums.content_types[0] ?? "NoCC",
         furnishing: enums.furnishings[0] ?? "Furnished",
@@ -43,17 +45,13 @@ export default function CreateLot({ enums }: { enums: Enums }) {
     });
 
     const [previews, setPreviews] = useState<string[]>([]);
-
-    // ⬇️ состояние "Community"
     const isCommunity = data.lot_type === "Community";
 
-    // ⬇️ при выборе "Community" чистим спальни/ванные
     useEffect(() => {
         if (isCommunity) {
             setData("bedrooms", "");
             setData("bathrooms", "");
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isCommunity]);
 
     const onFilesChange = (files: FileList | null) => {
@@ -136,6 +134,17 @@ export default function CreateLot({ enums }: { enums: Enums }) {
                             placeholder="https://example.com/profile"
                             error={errors.creator_link as string | undefined}
                         />
+
+                        <TextField
+                            id="download_link"
+                            label="Download link"
+                            value={data.download_link ?? ""}
+                            onChange={(v) => setData("download_link", v)}
+                            placeholder="https://example.com/download.zip"
+                        />
+                        {errors.download_link && (
+                            <p className="mt-1 text-sm text-red-500">{errors.download_link}</p>
+                        )}
 
                         <SelectField
                             label="Lot size"

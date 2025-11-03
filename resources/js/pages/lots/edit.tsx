@@ -1,28 +1,23 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import MainLayout from "@/layouts/main-layout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router, usePage, useForm } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { router } from "@inertiajs/react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import type { Enums, FormType, Lot } from "@/types/lots";
-import { useForm } from "@inertiajs/react";
 import { route } from "ziggy-js";
-import {LotFormFields} from "@/components/lots/lot-form-fields";
-import {ImagesUploader} from "@/components/lots/image-uploader";
-import {ExistingImagesGrid} from "@/components/lots/existing-images-grid";
-import {FormActions} from "@/components/lots/form-actions";
-import { usePage } from "@inertiajs/react";
+import { LotFormFields } from "@/components/lots/lot-form-fields";
+import { ImagesUploader } from "@/components/lots/image-uploader";
+import { ExistingImagesGrid } from "@/components/lots/existing-images-grid";
+import { FormActions } from "@/components/lots/form-actions";
+import {DeleteLotButton} from "@/components/lots/delete-lot-button";
 
-type PageExtras = {
-    badImageIds?: number[];
-    imageErrors?: string[];
-};
 export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
     const initial: FormType = {
         name: lot.name ?? "",
         description: lot.description ?? "",
         creator_id: lot.creator_id ?? "",
         creator_link: lot.creator_link ?? "",
+        download_link: (lot as any).download_link ?? "",
         lot_size: lot.lot_size ?? (enums.lot_sizes[0] ?? "20x15"),
         content_type: lot.content_type ?? (enums.content_types[0] ?? "NoCC"),
         furnishing: lot.furnishing ?? (enums.furnishings[0] ?? "Furnished"),
@@ -43,13 +38,13 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-
         const fd = new FormData();
         fd.append("_method", "PATCH");
         fd.append("name", data.name ?? "");
         fd.append("description", data.description ?? "");
         fd.append("creator_id", data.creator_id ?? "");
         fd.append("creator_link", data.creator_link ?? "");
+        fd.append("download_link", data.download_link ?? "");
         fd.append("lot_size", data.lot_size);
         fd.append("content_type", data.content_type);
         fd.append("furnishing", data.furnishing);
@@ -69,18 +64,25 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
 
     const { props } = usePage<{ errors: Record<string, string> }>();
     const serverErrors = props.errors ?? {};
-
-    // соберём общий список сообщений по images и images.*
     const existingBlockErrors = [...new Set(
         Object.entries(serverErrors)
             .filter(([k]) => k === "images" || k.startsWith("images."))
             .map(([, v]) => String(v))
     )];
-
-    // индексы "плохих" новых файлов (для превью — ты уже используешь ниже)
     const badIndexes = Object.keys(serverErrors)
         .filter((k) => k.startsWith("images.") && /^\d+$/.test(k.split(".")[1]))
         .map((k) => Number(k.split(".")[1]));
+
+    const handleDelete = () => {
+        if (!confirm(`Delete "${lot.name}"? This action cannot be undone.`)) return;
+        router.delete(route("lots.destroy", { lot: lot.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                // редирект произойдёт из контроллера (на lots.mine), но можно и здесь:
+                // router.visit(route("lots.mine"));
+            },
+        });
+    };
 
     return (
         <MainLayout>
@@ -117,7 +119,22 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
                         />
                     </div>
 
-                    <FormActions backHref={{ name: "lots.view", params: { lot: lot.id } }} processing={processing} />
+                    <div className="mt-8 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+                        <div className="mb-3 text-sm font-medium text-destructive">Danger zone</div>
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="text-sm text-muted-foreground">
+                                Permanently delete this lot and all its images.
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <DeleteLotButton lotId={lot.id} lotName={lot.name} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <FormActions
+                        backHref={{ name: "lots.view", params: { lot: lot.id } }}
+                        processing={processing}
+                    />
                 </form>
             </div>
         </MainLayout>

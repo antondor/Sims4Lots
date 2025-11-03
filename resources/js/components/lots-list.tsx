@@ -1,4 +1,4 @@
-import {Link, usePage} from "@inertiajs/react";
+import {Link, router, usePage} from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { LotFilters } from "@/components/lot-filters";
 import { LotCard } from "@/components/lot-card";
@@ -25,8 +25,24 @@ export const LotsList: React.FC<LotsListProps> = ({
                                                       title = "Lot Gallery",
                                                       subtitle = "Browse Sims 4 builds and lots",
                                                   }) => {
+
     const handleApplyFilters = (filters: any) => {
-        console.log("Filters applied:", filters);
+        const q: Record<string, any> = {
+            lotType: filters.lotType,
+            sizes: (filters.sizes ?? []).length ? filters.sizes : undefined,
+            contentTypes: (filters.contentTypes ?? []).length ? filters.contentTypes : undefined,
+            furnishings: (filters.furnishings ?? []).length ? filters.furnishings : undefined,
+            bedroomsMin: filters.bedroomsMin || undefined,
+            bedroomsMax: filters.bedroomsMax || undefined,
+            bathroomsMin: filters.bathroomsMin || undefined,
+            bathroomsMax: filters.bathroomsMax || undefined,
+        };
+
+        router.get(route("dashboard"), q, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     };
     const { props } = usePage();
     const user = (props as any)?.auth?.user;

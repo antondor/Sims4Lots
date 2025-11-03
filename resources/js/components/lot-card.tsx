@@ -36,10 +36,12 @@ export function LotCard({ lot }: { lot: Lot & { is_favorited?: boolean; isFavori
 
         router.post(route("lots.favorite.toggle", lotId), {}, {
             preserveScroll: true,
-            onError: () => setLiked(!next), // откат
+            onError: () => setLiked(!next),
             onFinish: () => setBusy(false),
         });
     };
+
+    const isCommunity = lot.lot_type === "Community";
 
     return (
         <Card className="gap-2 py-4 group w-full max-w-full rounded-xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
@@ -93,7 +95,6 @@ export function LotCard({ lot }: { lot: Lot & { is_favorited?: boolean; isFavori
 
             <div className="px-4 pb-2">
                 <div className="relative w-full overflow-hidden rounded-xl aspect-[4/3] sm:aspect-[16/9]">
-                    {/* Favourite toggle (справа сверху) */}
                     <div className="absolute right-2 top-2 z-20 pointer-events-none">
                         <button
                             type="button"
@@ -154,11 +155,15 @@ export function LotCard({ lot }: { lot: Lot & { is_favorited?: boolean; isFavori
                                 <span className="text-[11px] opacity-80">Furnishing</span>
                                 <span className="text-sm">{lot.furnishing}</span>
 
-                                <span className="text-[11px] opacity-80">Bedrooms</span>
-                                <span className="text-sm">{lot.bedrooms ?? 0}</span>
+                                {!isCommunity && (
+                                    <>
+                                        <span className="text-[11px] opacity-80">Bedrooms</span>
+                                        <span className="text-sm">{lot.bedrooms ?? 0}</span>
 
-                                <span className="text-[11px] opacity-80">Bathrooms</span>
-                                <span className="text-sm">{lot.bathrooms ?? 0}</span>
+                                        <span className="text-[11px] opacity-80">Bathrooms</span>
+                                        <span className="text-sm">{lot.bathrooms ?? 0}</span>
+                                    </>
+                                )}
                             </div>
 
                             <div className="mt-3 pointer-events-auto">

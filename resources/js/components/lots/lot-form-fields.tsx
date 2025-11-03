@@ -13,6 +13,15 @@ type Props = {
 };
 
 export function LotFormFields({ data, setData, enums, errors }: Props) {
+    const isCommunity = data.lot_type === "Community";
+
+    React.useEffect(() => {
+        if (isCommunity) {
+            if (data.bedrooms !== "") setData("bedrooms", "" as any);
+            if (data.bathrooms !== "") setData("bathrooms", "" as any);
+        }
+    }, [isCommunity]);
+
     return (
         <div className="grid gap-6 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -38,6 +47,7 @@ export function LotFormFields({ data, setData, enums, errors }: Props) {
                     id="creator_id"
                     value={data.creator_id ?? ""}
                     onChange={(e) => setData("creator_id", e.target.value)}
+                    placeholder="1234567"
                 />
                 {errors.creator_id && <p className="mt-1 text-sm text-red-500">{errors.creator_id}</p>}
             </div>
@@ -51,6 +61,20 @@ export function LotFormFields({ data, setData, enums, errors }: Props) {
                     placeholder="https://example.com/gallery"
                 />
                 {errors.creator_link && <p className="mt-1 text-sm text-red-500">{errors.creator_link}</p>}
+            </div>
+
+            <div className="sm:col-span-2">
+                <Label htmlFor="download_link" className="mb-2">Download link</Label>
+                <Input
+                    id="download_link"
+                    value={data.download_link ?? ""}
+                    onChange={(e) => setData("download_link", e.target.value as any)}
+                    placeholder="https://example.com/download.zip"
+                    inputMode="url"
+                />
+                {errors.download_link && (
+                    <p className="mt-1 text-sm text-red-500">{errors.download_link}</p>
+                )}
             </div>
 
             <div>
@@ -88,7 +112,17 @@ export function LotFormFields({ data, setData, enums, errors }: Props) {
 
             <div>
                 <Label className="mb-2">Lot type</Label>
-                <Select value={data.lot_type} onValueChange={(v) => setData("lot_type", v)}>
+                <Select
+                    value={data.lot_type}
+                    onValueChange={(v) => {
+                        setData("lot_type", v as any);
+                        // мгновенно чистим и блокируем поля при выборе Community
+                        if (v === "Community") {
+                            setData("bedrooms", "" as any);
+                            setData("bathrooms", "" as any);
+                        }
+                    }}
+                >
                     <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                         {enums.lot_types.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -104,7 +138,9 @@ export function LotFormFields({ data, setData, enums, errors }: Props) {
                     type="number"
                     min={0}
                     value={String(data.bedrooms)}
-                    onChange={(e) => setData("bedrooms", e.target.value)}
+                    onChange={(e) => setData("bedrooms", e.target.value as any)}
+                    placeholder={isCommunity ? "N/A for Community" : "e.g. 3"}
+                    disabled={isCommunity}
                 />
                 {errors.bedrooms && <p className="mt-1 text-sm text-red-500">{errors.bedrooms}</p>}
             </div>
@@ -116,7 +152,9 @@ export function LotFormFields({ data, setData, enums, errors }: Props) {
                     type="number"
                     min={0}
                     value={String(data.bathrooms)}
-                    onChange={(e) => setData("bathrooms", e.target.value)}
+                    onChange={(e) => setData("bathrooms", e.target.value as any)}
+                    placeholder={isCommunity ? "N/A for Community" : "e.g. 2"}
+                    disabled={isCommunity}
                 />
                 {errors.bathrooms && <p className="mt-1 text-sm text-red-500">{errors.bathrooms}</p>}
             </div>

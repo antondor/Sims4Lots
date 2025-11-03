@@ -17,6 +17,7 @@ class Lot extends Model
         'description',
         'creator_id',
         'creator_link',
+        'download_link',
         'lot_size',
         'content_type',
         'furnishing',
@@ -32,9 +33,7 @@ class Lot extends Model
 
     public function coverImage()
     {
-        return $this->hasOne(LotImage::class)
-            ->orderByDesc('is_cover')
-            ->orderBy('position');
+        return $this->hasOne(LotImage::class)->orderBy('position');
     }
 
     public function user()

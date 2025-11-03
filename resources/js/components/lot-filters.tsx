@@ -1,13 +1,9 @@
+// LotFilters.tsx
 "use client";
-
 import * as React from "react";
 import { FilterSelectSize } from "@/components/filter-select-size";
 import { FilterCheckboxGroup } from "@/components/filter-checkbox-group";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -20,6 +16,10 @@ interface LotFiltersProps {
 export const LotFilters: React.FC<LotFiltersProps> = ({ onApply }) => {
     const [lotType, setLotType] = React.useState<"Residential" | "Community">("Residential");
 
+    const [sizes, setSizes] = React.useState<string[]>([]);
+    const [contentTypes, setContentTypes] = React.useState<string[]>([]);     // "CC" | "NoCC"
+    const [furnishings, setFurnishings] = React.useState<string[]>([]);       // "Furnished" | "Unfurnished"
+
     const [filters, setFilters] = React.useState({
         bedroomsMin: "",
         bedroomsMax: "",
@@ -31,14 +31,8 @@ export const LotFilters: React.FC<LotFiltersProps> = ({ onApply }) => {
 
     const handleLotTypeChange = (type: "Residential" | "Community") => {
         setLotType(type);
-
         if (type !== "Residential") {
-            setFilters({
-                bedroomsMin: "",
-                bedroomsMax: "",
-                bathroomsMin: "",
-                bathroomsMax: "",
-            });
+            setFilters({ bedroomsMin: "", bedroomsMax: "", bathroomsMin: "", bathroomsMax: "" });
         }
     };
 
@@ -47,7 +41,13 @@ export const LotFilters: React.FC<LotFiltersProps> = ({ onApply }) => {
     };
 
     const handleApply = () => {
-        onApply?.({ lotType, ...filters });
+        onApply?.({
+            lotType,
+            sizes,
+            contentTypes,
+            furnishings,
+            ...filters,
+        });
     };
 
     return (
@@ -59,42 +59,35 @@ export const LotFilters: React.FC<LotFiltersProps> = ({ onApply }) => {
                 </Button>
             </PopoverTrigger>
 
-            <PopoverContent
-                className="w-[400px] p-4"
-                side="bottom"
-                align="end"
-                sideOffset={8}
-                alignOffset={-40}
-            >
+            <PopoverContent className="w-[400px] p-4" side="bottom" align="end" sideOffset={8} alignOffset={-40}>
                 <div className="flex flex-col gap-5 w-full">
-
                     <div className="flex flex-col w-full">
-                        <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">
-                            Lot Size
-                        </div>
-                        <FilterSelectSize />
+                        <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">Lot Size</div>
+                        <FilterSelectSize value={sizes} onChange={setSizes} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 w-full">
                         <div className="flex flex-col w-full">
-                            <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">
-                                Content Type
-                            </div>
-                            <FilterCheckboxGroup values={["CC", "No CC"]} />
+                            <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">Content Type</div>
+                            <FilterCheckboxGroup
+                                values={["CC", "NoCC"]}
+                                value={contentTypes}
+                                onChange={setContentTypes}
+                            />
                         </div>
 
                         <div className="flex flex-col w-full">
-                            <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">
-                                Furnishing
-                            </div>
-                            <FilterCheckboxGroup values={["Furnished", "Unfurnished"]} />
+                            <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">Furnishing</div>
+                            <FilterCheckboxGroup
+                                values={["Furnished", "Unfurnished"]}
+                                value={furnishings}
+                                onChange={setFurnishings}
+                            />
                         </div>
                     </div>
 
                     <div className="flex flex-col w-full">
-                        <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">
-                            Lot Type
-                        </div>
+                        <div className="text-muted-foreground px-1 py-1.5 text-xs uppercase tracking-wide">Lot Type</div>
                         <div className="flex gap-3 w-full">
                             {["Residential", "Community"].map((type) => (
                                 <Button
@@ -117,74 +110,56 @@ export const LotFilters: React.FC<LotFiltersProps> = ({ onApply }) => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="bedrooms-min" className="text-xs text-muted-foreground">
-                                    Bedrooms (From)
-                                </Label>
+                                <Label htmlFor="bedrooms-min" className="text-xs text-muted-foreground">Bedrooms (From)</Label>
                                 <Input
                                     id="bedrooms-min"
                                     type="number"
                                     placeholder="0"
                                     value={filters.bedroomsMin}
-                                    onChange={(e) =>
-                                        handleFilterChange("bedroomsMin", e.target.value)
-                                    }
+                                    onChange={(e) => handleFilterChange("bedroomsMin", e.target.value)}
                                     disabled={!isResidential}
                                 />
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="bedrooms-max" className="text-xs text-muted-foreground">
-                                    Bedrooms (To)
-                                </Label>
+                                <Label htmlFor="bedrooms-max" className="text-xs text-muted-foreground">Bedrooms (To)</Label>
                                 <Input
                                     id="bedrooms-max"
                                     type="number"
                                     placeholder="5"
                                     value={filters.bedroomsMax}
-                                    onChange={(e) =>
-                                        handleFilterChange("bedroomsMax", e.target.value)
-                                    }
+                                    onChange={(e) => handleFilterChange("bedroomsMax", e.target.value)}
                                     disabled={!isResidential}
                                 />
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="bathrooms-min" className="text-xs text-muted-foreground">
-                                    Bathrooms (From)
-                                </Label>
+                                <Label htmlFor="bathrooms-min" className="text-xs text-muted-foreground">Bathrooms (From)</Label>
                                 <Input
                                     id="bathrooms-min"
                                     type="number"
                                     placeholder="0"
                                     value={filters.bathroomsMin}
-                                    onChange={(e) =>
-                                        handleFilterChange("bathroomsMin", e.target.value)
-                                    }
+                                    onChange={(e) => handleFilterChange("bathroomsMin", e.target.value)}
                                     disabled={!isResidential}
                                 />
                             </div>
 
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="bathrooms-max" className="text-xs text-muted-foreground">
-                                    Bathrooms (To)
-                                </Label>
+                                <Label htmlFor="bathrooms-max" className="text-xs text-muted-foreground">Bathrooms (To)</Label>
                                 <Input
                                     id="bathrooms-max"
                                     type="number"
                                     placeholder="5"
                                     value={filters.bathroomsMax}
-                                    onChange={(e) =>
-                                        handleFilterChange("bathroomsMax", e.target.value)
-                                    }
+                                    onChange={(e) => handleFilterChange("bathroomsMax", e.target.value)}
                                     disabled={!isResidential}
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <Button className="mt-2 w-full" onClick={handleApply}>
-                        Apply Filters
-                    </Button>
+                    <Button className="mt-2 w-full" onClick={handleApply}>Apply Filters</Button>
                 </div>
             </PopoverContent>
         </Popover>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, usePage } from "@inertiajs/react";
+import {Link, router, usePage} from "@inertiajs/react";
 import { ChevronUp, ChevronDown, CircleUserRound, LogOut, Settings, Heart, Folder, User } from "lucide-react";
 import {
     DropdownMenu,
@@ -104,11 +104,15 @@ export function NavFooter() {
 
                     <DropdownMenuSeparator />
 
-                    <DropdownMenuItem asChild>
-                        <Link href={route("logout")} method="post" as="button">
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>Logout</span>
-                        </Link>
+                    <DropdownMenuItem
+                        onSelect={(e) => {
+                            e.preventDefault();
+                            router.post(route("logout"));
+                        }}
+                        className="cursor-pointer"
+                    >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Logout</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
