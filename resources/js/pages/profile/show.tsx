@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, CalendarDays, Folder, Heart } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import {LotCard} from "@/components/lot-card";
+import { LotCard } from "@/components/lot-card";
+import { FavouriteToggle } from "@/components/common/FavouriteToggle";
+import type { Lot } from "@/types/lots";
+import { route } from "ziggy-js";
+
 dayjs.extend(relativeTime);
 
 type UserDto = {
@@ -22,17 +26,30 @@ type UserDto = {
 type Props = {
     user: UserDto;
     stats: { lots: number; favourites: number };
-    latestLots: any[];
+    latestLots: Lot[]; // <-- типизировали
     isOwner: boolean;
 };
 
 export default function PublicUserShow({ user, stats, latestLots, isOwner }: Props) {
     const avatar = user.avatar_url;
 
+    // Топ-лот по лайкам из последних работ (если favorites_count не будет — покажем 0)
+    const topLot =
+        latestLots && latestLots.length
+            ? [...latestLots].reduce(
+                (acc, lot) => {
+                    const cnt = lot.favorites_count ?? 0;
+                    return cnt > acc.count ? { lot, count: cnt } : acc;
+                },
+                { lot: latestLots[0], count: latestLots[0].favorites_count ?? 0 }
+            ).lot
+            : null;
+
     return (
         <MainLayout>
             <Head title={`${user.name} — Profile`} />
-            <div className="container mx-auto max-w-6xl px-4 py-8">
+
+            <div className="container mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
                     <img
@@ -72,31 +89,53 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner }: Pro
                                 </a>
                             )}
                             {isOwner && (
-                                <Link href="/profile">
-                                    <Button variant="ghost">Go to my profile</Button>
+                                <Link href={route("profile.edit")}>
+                                    <Button className="gap-1">Edit profile</Button>
                                 </Link>
                             )}
+                            {/* Быстрые действия */}
+                            <Link href={route("lots.mine")}>
+                                <Button variant="ghost" className="gap-1">
+                                    <Folder className="h-4 w-4" />
+                                    My lots
+                                </Button>
+                            </Link>
+                            <Link href={route("favourites.index")}>
+                                <Button variant="ghost" className="gap-1">
+                                    <Heart className="h-4 w-4" />
+                                    Favourites
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </div>
 
-                {/* About */}
-                {(user.about || user.external_url || user.sims_gallery_id) && (
-                    <Card className="mt-6">
-                        <CardHeader>
-                            <CardTitle>About</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {user.about ? (
-                                <p className="whitespace-pre-line leading-relaxed">{user.about}</p>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">No bio yet.</p>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
+                {/* About / Info */}
+                <Card className="mt-6">
+                    <CardHeader>
+                        <CardTitle>About</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {user.about ? (
+                            <p className="whitespace-pre-line leading-relaxed">{user.about}</p>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                No bio yet. {isOwner ? "Tell the community about yourself in your profile settings." : ""}
+                            </p>
+                        )}
 
-                {/* Stats */}
+                        {/* Доп. инфо, чтобы не было пусто, если нет bio */}
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <InfoRow label="Public link" value={user.external_url ?? "—"} />
+                            <InfoRow
+                                label="Sims 4 Gallery ID"
+                                value={user.sims_gallery_id ?? "—"}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Highlights / Stats */}
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <Card>
                         <CardContent className="flex items-center gap-3 p-4">
@@ -114,7 +153,45 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner }: Pro
                             <div>
                                 <p className="text-xs text-muted-foreground">Favourites</p>
                                 <p className="text-xl font-semibold">{stats.favourites}</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                    Saved by you
+                                </p>
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Топ-лот по лайкам с быстрым лайком и счётчиком */}
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base">Top liked (recent)</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            {topLot ? (
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src={topLot.cover_image?.url ?? topLot.images?.[0]?.url ?? "/images/lot-placeholder.jpg"}
+                                        alt={topLot.name}
+                                        className="h-14 w-20 rounded object-cover ring-1 ring-border"
+                                        loading="lazy"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <Link href={route("lots.view", { lot: topLot.id })} className="line-clamp-2 text-sm font-medium hover:underline">
+                                            {topLot.name}
+                                        </Link>
+                                        <div className="mt-1">
+                                            <FavouriteToggle
+                                                lotId={topLot.id}
+                                                initialLiked={Boolean((topLot as any).is_favorited ?? (topLot as any).isFavorited)}
+                                                initialCount={topLot.favorites_count ?? 0}
+                                                size="sm"
+                                                showCount
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-muted-foreground">No lots to highlight yet.</div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -123,6 +200,11 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner }: Pro
                 <div className="mt-8">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="text-lg font-semibold">Latest lots</h2>
+                        {stats.lots > 0 && (
+                            <Link href={route("users.show", { user: user.id }) + "?tab=lots"}>
+                                <Button variant="ghost" size="sm">View all</Button>
+                            </Link>
+                        )}
                     </div>
 
                     {latestLots.length ? (
@@ -141,5 +223,14 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner }: Pro
                 </div>
             </div>
         </MainLayout>
+    );
+}
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+    return (
+        <div className="flex items-center justify-between gap-4 rounded-lg border bg-background/50 px-3 py-2">
+            <dt className="text-xs text-muted-foreground">{label}</dt>
+            <dd className="text-sm font-medium max-w-[60%] truncate">{value}</dd>
+        </div>
     );
 }

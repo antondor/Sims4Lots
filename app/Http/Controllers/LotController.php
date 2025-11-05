@@ -6,6 +6,7 @@ use App\Models\Lot;
 use App\Models\LotImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -20,6 +21,8 @@ class LotController extends Controller
     private const FURNISHINGS   = ['Furnished','Unfurnished'];
     private const LOT_TYPES     = ['Residential','Community'];
 
+    // ===== Public actions ==============================================================
+
     public function index(Request $request)
     {
         $sizes        = (array) $request->query('sizes', []);
@@ -27,14 +30,18 @@ class LotController extends Controller
         $furnishings  = (array) $request->query('furnishings', []);
         $lotType      = $request->query('lotType');
 
-        $bMin = $request->has('bedroomsMin')  && $request->bedroomsMin !== ''  ? (int)$request->bedroomsMin  : null;
-        $bMax = $request->has('bedroomsMax')  && $request->bedroomsMax !== ''  ? (int)$request->bedroomsMax  : null;
-        $baMin= $request->has('bathroomsMin') && $request->bathroomsMin !== '' ? (int)$request->bathroomsMin : null;
-        $baMax= $request->has('bathroomsMax') && $request->bathroomsMax !== '' ? (int)$request->bathroomsMax : null;
+        $bMin  = $request->filled('bedroomsMin')  ? (int)$request->bedroomsMin  : null;
+        $bMax  = $request->filled('bedroomsMax')  ? (int)$request->bedroomsMax  : null;
+        $baMin = $request->filled('bathroomsMin') ? (int)$request->bathroomsMin : null;
+        $baMax = $request->filled('bathroomsMax') ? (int)$request->bathroomsMax : null;
 
         $query = Lot::query()
-            ->orderByRaw('CASE WHEN id = 1 THEN 0 ELSE 1 END')
+            ->confirmed()
+            ->withCount(['favoritedBy as favorites_count'])
+            ->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [1])
+            ->orderByDesc('favorites_count')
             ->orderBy('updated_at', 'asc')
+            ->orderBy('id','asc')
             ->with(['images','user']);
 
         $query->when(!empty($sizes), fn($q) => $q->whereIn('lot_size', $sizes));
@@ -43,22 +50,15 @@ class LotController extends Controller
         $query->when(in_array($lotType, ['Residential','Community']), fn($q) => $q->where('lot_type', $lotType));
 
         if ($lotType === 'Residential' || $lotType === null) {
-            if (!is_null($bMin) && !is_null($bMax)) {
-                $query->whereBetween('bedrooms', [$bMin, $bMax]);
-            } elseif (!is_null($bMin)) {
-                $query->where('bedrooms', '>=', $bMin);
-            } elseif (!is_null($bMax)) {
-                $query->where('bedrooms', '<=', $bMax);
-            }
+            if (!is_null($bMin) && !is_null($bMax)) $query->whereBetween('bedrooms', [$bMin, $bMax]);
+            elseif (!is_null($bMin)) $query->where('bedrooms', '>=', $bMin);
+            elseif (!is_null($bMax)) $query->where('bedrooms', '<=', $bMax);
 
-            if (!is_null($baMin) && !is_null($baMax)) {
-                $query->whereBetween('bathrooms', [$baMin, $baMax]);
-            } elseif (!is_null($baMin)) {
-                $query->where('bathrooms', '>=', $baMin);
-            } elseif (!is_null($baMax)) {
-                $query->where('bathrooms', '<=', $baMax);
-            }
+            if (!is_null($baMin) && !is_null($baMax)) $query->whereBetween('bathrooms', [$baMin, $baMax]);
+            elseif (!is_null($baMin)) $query->where('bathrooms', '>=', $baMin);
+            elseif (!is_null($baMax)) $query->where('bathrooms', '<=', $baMax);
         }
+
         $query = $this->attachFavFlag($query);
 
         return Inertia::render('dashboard', [
@@ -66,28 +66,6 @@ class LotController extends Controller
         ]);
     }
 
-
-    private function attachFavFlag(Builder $query): Builder
-    {
-        if (empty($query->getQuery()->columns)) {
-            $query->select('lots.*');
-        }
-
-        $uid = auth()->id();
-
-        if (!$uid) {
-            return $query->addSelect(DB::raw('0 as is_favorited'));
-        }
-
-        return $query->addSelect(DB::raw(
-            'EXISTS (
-            select 1
-            from favorites
-            where favorites.lot_id = lots.id
-              and favorites.user_id = ' . (int) $uid . '
-        ) as is_favorited'
-        ));
-    }
 
     public function search(Request $request)
     {
@@ -97,15 +75,17 @@ class LotController extends Controller
         }
 
         $lots = Lot::query()
+            ->select(['id','name','updated_at'])
             ->where('name', 'like', "%{$q}%")
             ->with(['images' => fn ($q) => $q->orderBy('position')->limit(1)])
-            ->orderBy('updated_at', 'desc')
+            ->orderByDesc('updated_at')
             ->limit(8)
             ->get();
 
         $data = $lots->map(function (Lot $lot) {
-            $cover = $lot->images->first();
+            $cover    = $lot->images->first();
             $coverUrl = $cover?->url ?? asset('images/lot-placeholder.jpg');
+
             return [
                 'id'        => $lot->id,
                 'name'      => $lot->name,
@@ -118,20 +98,30 @@ class LotController extends Controller
 
     public function view(Lot $lot)
     {
+        $lot->loadCount(['favoritedBy as favorites_count']);
         $lot->load(['images' => fn ($q) => $q->orderBy('position'), 'user']);
+
+        if ($lot->status !== 'confirmed') {
+            $user    = auth()->user();
+            $isOwner = $user && $user->id === $lot->user_id;
+            $isAdmin = $user && ($user->is_admin ?? false);
+            abort_unless($isOwner || $isAdmin, 403, 'This lot is not confirmed yet.');
+        }
 
         $isOwner = auth()->check() && $lot->user_id === auth()->id();
         $isFavorited = auth()->check()
             ? auth()->user()->favoriteLots()->where('lot_id', $lot->id)->exists()
             : false;
 
+        $isAdmin = auth()->check() && (auth()->user()->is_admin ?? false);
+
         return Inertia::render('lots/show', [
-            'lot' => $lot,
-            'isOwner' => $isOwner,
+            'lot'         => $lot,
+            'isOwner'     => $isOwner,
             'isFavorited' => $isFavorited,
+            'isAdmin'     => $isAdmin,
         ]);
     }
-
 
     public function show(Lot $lot)
     {
@@ -146,44 +136,32 @@ class LotController extends Controller
 
     public function edit(Lot $lot)
     {
-        abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
+        $this->abortIfNotOwner($lot);
 
-        $lot->load(['images' => fn($q) => $q->orderBy('position')]);
+        $lot->load(['images' => fn ($q) => $q->orderBy('position')]);
 
         return Inertia::render('lots/edit', [
-            'lot' => $lot,
+            'lot'   => $lot,
             'enums' => $this->enums(),
         ]);
     }
 
     public function update(Request $request, Lot $lot)
     {
-        abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
+        $this->abortIfNotOwner($lot);
 
         $data = $request->validate($this->rules(true));
-
         $lot->update($data);
 
         if ($request->hasFile('images')) {
             $files = array_values($request->file('images'));
             $start = (int)$lot->images()->max('position') + 1;
-
-            foreach ($files as $i => $file) {
-                $ext  = $file->getClientOriginalExtension();
-                $dir  = "images/lots/{$lot->id}";
-                $name = Str::uuid().'.'.$ext;
-
-                Storage::disk('s3')->putFileAs($dir, $file, $name);
-
-                LotImage::create([
-                    'lot_id'   => $lot->id,
-                    'filename' => $name,
-                    'position' => $start + $i,
-                ]);
-            }
+            $this->storeLotImages($lot, $files, $start);
         }
 
-        return redirect()->route('lots.view', ['lot' => $lot->id])->with('success', 'Lot updated.');
+        return redirect()
+            ->route('lots.view', ['lot' => $lot->id])
+            ->with('success', 'Lot updated.');
     }
 
     public function mine()
@@ -192,6 +170,7 @@ class LotController extends Controller
 
         $base = Lot::query()
             ->where('user_id', $userId)
+            ->withCount(['favoritedBy as favorites_count'])
             ->with([
                 'coverImage:id,lot_id,filename,position',
                 'user:id,name,avatar',
@@ -205,35 +184,103 @@ class LotController extends Controller
         return Inertia::render('lots/mine', ['lots' => $lots]);
     }
 
+    public function pendingList(Request $request)
+    {
+        abort_unless(Gate::allows('admin'), 403);
+
+        $lots = Lot::query()
+            ->pending()
+            ->withCount(['favoritedBy as favorites_count'])
+            ->with(['coverImage:id,lot_id,filename,position', 'user:id,name,avatar'])
+            ->orderBy('created_at', 'asc')
+            ->paginate(12)
+            ->withQueryString();
+
+        return Inertia::render('admin/lots/pending', ['lots' => $lots]);
+    }
+
     public function store(Request $request)
     {
-        $data = Validator::make($request->all(), $this->rules(true))
-            ->validate();
+        $data = Validator::make($request->all(), $this->rules(true))->validate();
 
         $lot = Lot::create([
             'user_id' => $request->user()->id,
+            'status'  => 'pending',
             ...$data,
         ]);
 
         if ($request->hasFile('images')) {
             /** @var UploadedFile[] $files */
             $files = $request->file('images');
-            foreach ($files as $idx => $file) {
-                $ext  = $file->getClientOriginalExtension();
-                $dir  = "images/lots/{$lot->id}";
-                $name = Str::uuid().'.'.$ext;
-
-                Storage::disk('s3')->putFileAs($dir, $file, $name);
-
-                LotImage::create([
-                    'lot_id'   => $lot->id,
-                    'filename' => $name,
-                    'position' => $idx,
-                ]);
-            }
+            $this->storeLotImages($lot, $files, 0);
         }
 
         return redirect()->route('dashboard')->with('success', 'Lot created successfully.');
+    }
+
+    public function approve(Request $request, Lot $lot)
+    {
+        abort_unless(Gate::allows('admin'), 403);
+
+        if ($lot->status !== 'confirmed') {
+            $lot->update(['status' => 'confirmed']);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'ok', 'lot_status' => $lot->status]);
+        }
+
+        return redirect()
+            ->route('admin.lots.pending')
+            ->with('success', 'Lot approved.');
+    }
+
+    public function invalidate(Request $request, Lot $lot)
+    {
+        abort_unless(Gate::allows('admin'), 403);
+
+        if ($lot->status !== 'invalid') {
+            $lot->update(['status' => 'invalid']);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'ok', 'lot_status' => $lot->status]);
+        }
+
+        return redirect()
+            ->route('admin.lots.pending')
+            ->with('success', 'Lot marked as invalid.');
+    }
+
+    public function destroy(Lot $lot)
+    {
+        $this->abortIfNotOwner($lot);
+        $lot->delete();
+
+        return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
+    }
+
+    // ====== Private helpers ============================================================
+
+    private function attachFavFlag(Builder $query): Builder
+    {
+        // если select не задан — выберем lots.*
+        if (empty($query->getQuery()->columns)) {
+            $query->select('lots.*');
+        }
+
+        $uid = auth()->id();
+        if (!$uid) {
+            return $query->addSelect(DB::raw('0 as is_favorited'));
+        }
+
+        return $query->addSelect(DB::raw(
+            'EXISTS (
+                SELECT 1 FROM favorites
+                WHERE favorites.lot_id = lots.id
+                  AND favorites.user_id = ' . (int)$uid . '
+            ) AS is_favorited'
+        ));
     }
 
     private function enums(): array
@@ -263,16 +310,52 @@ class LotController extends Controller
         ];
 
         if ($withImages) {
-            $rules['images'] = ['nullable','array','max:10'];
-            $rules['images.*'] = [];
+            $rules['images']   = ['nullable','array','max:10'];
+            // мягкая валидация чтобы "ничего не сломать" — не добавляю строгие mimes
+            $rules['images.*'] = ['file','max:8192'];
         }
+
         return $rules;
     }
 
-    public function destroy(Lot $lot)
+    private function readRange(Request $request, string $base): array
+    {
+        $min = $request->filled("{$base}Min") ? (int)$request->input("{$base}Min") : null;
+        $max = $request->filled("{$base}Max") ? (int)$request->input("{$base}Max") : null;
+        return [$min, $max];
+    }
+
+    private function applyNumericRange(Builder $q, string $column, ?int $min, ?int $max): void
+    {
+        if (!is_null($min) && !is_null($max)) {
+            $q->whereBetween($column, [$min, $max]);
+        } elseif (!is_null($min)) {
+            $q->where($column, '>=', $min);
+        } elseif (!is_null($max)) {
+            $q->where($column, '<=', $max);
+        }
+    }
+
+    /** @param UploadedFile[] $files */
+    private function storeLotImages(Lot $lot, array $files, int $startPosition = 0): void
+    {
+        foreach (array_values($files) as $i => $file) {
+            $ext  = $file->getClientOriginalExtension();
+            $dir  = "images/lots/{$lot->id}";
+            $name = Str::uuid().'.'.$ext;
+
+            Storage::disk('s3')->putFileAs($dir, $file, $name);
+
+            LotImage::create([
+                'lot_id'   => $lot->id,
+                'filename' => $name,
+                'position' => $startPosition + $i,
+            ]);
+        }
+    }
+
+    private function abortIfNotOwner(Lot $lot): void
     {
         abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
-        $lot->delete();
-        return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
     }
 }

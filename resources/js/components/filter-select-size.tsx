@@ -1,36 +1,19 @@
 import * as React from "react";
+import { useControlledOpt } from "@/hooks/use-controlled";
 
-type FilterSelectSizeProps = {
-    options?: string[];           // список размеров, если нужно переопределить
-    value?: string[];             // выбранные значения (контролируемо)
-    onChange?: (v: string[]) => void; // колбэк при изменении
+type Props = {
+    options?: string[];
+    value?: string[];
+    onChange?: (v: string[]) => void;
     className?: string;
 };
 
 const DEFAULT_OPTIONS = ["20x15","30x20","40x30","50x50","64x64"];
 
-export const FilterSelectSize: React.FC<FilterSelectSizeProps> = ({
-                                                                      options = DEFAULT_OPTIONS,
-                                                                      value,
-                                                                      onChange,
-                                                                      className,
-                                                                  }) => {
-    // если value не передали — работаем неконтролируемо
-    const [internal, setInternal] = React.useState<string[]>(value ?? []);
+export const FilterSelectSize: React.FC<Props> = ({ options = DEFAULT_OPTIONS, value, onChange, className }) => {
+    const [selected, setSelected] = useControlledOpt<string[]>({ value, defaultValue: [], onChange });
 
-    // синхронизация при внешнем обновлении value
-    React.useEffect(() => {
-        if (value) setInternal(value);
-    }, [value]);
-
-    const selected = value ?? internal;
-
-    const toggle = (opt: string) => {
-        const exists = selected.includes(opt);
-        const next = exists ? selected.filter((s) => s !== opt) : [...selected, opt];
-        if (onChange) onChange(next);
-        else setInternal(next);
-    };
+    const toggle = (opt: string) => { const next = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt]; setSelected(next); };
 
     return (
         <div className={className}>

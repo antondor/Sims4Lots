@@ -11,7 +11,7 @@ export default function FavouritesIndex({ lots }: { lots: PaginatedData<Lot> }) 
     return (
         <MainLayout>
             <Head title="Favourites" />
-            <div className="container mx-auto max-w-screen-xl px-4 py-8">
+            <div className="container mx-auto px-4 py-8">
                 <div className="mb-6 flex items-center justify-between">
                     <div>
                         <h1 className="mb-1 text-2xl font-semibold">Favourites</h1>

@@ -1,4 +1,5 @@
-import {Link, router, usePage} from "@inertiajs/react";
+import React from "react";
+import { Link, router, usePage } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { LotFilters } from "@/components/lot-filters";
 import { LotCard } from "@/components/lot-card";
@@ -6,9 +7,8 @@ import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { DefaultPagination } from "@/components/default-pagination";
 import { route } from "ziggy-js";
-import React from "react";
 
-type LotsListProps = {
+type Props = {
     lots: PaginatedData<Lot>;
     showHeader?: boolean;
     showFilters?: boolean;
@@ -17,33 +17,28 @@ type LotsListProps = {
     subtitle?: string;
 };
 
-export const LotsList: React.FC<LotsListProps> = ({
-                                                      lots,
-                                                      showHeader = true,
-                                                      showFilters = true,
-                                                      showCreateButton = true,
-                                                      title = "Lot Gallery",
-                                                      subtitle = "Browse Sims 4 builds and lots",
-                                                  }) => {
-
+export const LotsList: React.FC<Props> = ({
+                                              lots,
+                                              showHeader = true,
+                                              showFilters = true,
+                                              showCreateButton = true,
+                                              title = "Lot Gallery",
+                                              subtitle = "Browse Sims 4 builds and lots",
+                                          }) => {
     const handleApplyFilters = (filters: any) => {
         const q: Record<string, any> = {
             lotType: filters.lotType,
-            sizes: (filters.sizes ?? []).length ? filters.sizes : undefined,
-            contentTypes: (filters.contentTypes ?? []).length ? filters.contentTypes : undefined,
-            furnishings: (filters.furnishings ?? []).length ? filters.furnishings : undefined,
+            sizes: filters.sizes?.length ? filters.sizes : undefined,
+            contentTypes: filters.contentTypes?.length ? filters.contentTypes : undefined,
+            furnishings: filters.furnishings?.length ? filters.furnishings : undefined,
             bedroomsMin: filters.bedroomsMin || undefined,
             bedroomsMax: filters.bedroomsMax || undefined,
             bathroomsMin: filters.bathroomsMin || undefined,
             bathroomsMax: filters.bathroomsMax || undefined,
         };
-
-        router.get(route("dashboard"), q, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(route("dashboard"), q, { preserveState: true, preserveScroll: true, replace: true });
     };
+
     const { props } = usePage();
     const user = (props as any)?.auth?.user;
 
@@ -52,19 +47,13 @@ export const LotsList: React.FC<LotsListProps> = ({
             {showHeader && (
                 <div className="mb-5 flex w-full items-end justify-between gap-4">
                     <h2 className="mt-2 min-w-0">
-            <span className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight">
-              {title}
-            </span>
-                        {subtitle && (
-                            <span className="text-muted-foreground block text-sm">
-                {subtitle}
-              </span>
-                        )}
+                        <span className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight">{title}</span>
+                        {subtitle && <span className="text-muted-foreground block text-sm">{subtitle}</span>}
                     </h2>
 
                     {(showCreateButton || showFilters) && (
                         <div className="flex items-center gap-2 shrink-0 self-start">
-                            {(showCreateButton && user) && (
+                            {showCreateButton && user && (
                                 <Link href={route("lots.create")} className="inline-flex">
                                     <Button size="sm">Create lot</Button>
                                 </Link>

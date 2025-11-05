@@ -2,33 +2,34 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Favoritable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Lot extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, SoftDeletes, Favoritable;
 
     protected $fillable = [
-        'user_id',
-        'name',
-        'description',
-        'creator_id',
-        'creator_link',
-        'download_link',
-        'lot_size',
-        'content_type',
-        'furnishing',
-        'lot_type',
-        'bedrooms',
-        'bathrooms',
+        'user_id','name','description','creator_id','creator_link','download_link',
+        'lot_size','content_type','furnishing','lot_type','bedrooms','bathrooms',
+        'status',
     ];
+
+    protected $casts = [
+        'is_favorited'     => 'boolean',
+        'favorites_count'  => 'integer', // ← добавили: счетчик будет приходить как int
+    ];
+
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
+    }
 
     public function images()
     {
-        return $this->hasMany(LotImage::class)->orderBy('position');
+        return $this->hasMany(LotImage::class);
     }
 
     public function coverImage()
@@ -41,8 +42,13 @@ class Lot extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function favoritedBy()
+    public function scopeConfirmed($q)
     {
-        return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
+        return $q->where('status', 'confirmed');
+    }
+
+    public function scopePending($q)
+    {
+        return $q->where('status', 'pending');
     }
 }

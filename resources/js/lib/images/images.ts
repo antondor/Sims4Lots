@@ -10,4 +10,4 @@ export const resolveSrc = (u?: string | null): string | undefined => {
 };
 
 export const AVATAR_PLACEHOLDER = "/images/profile_avatar_placeholder.png";
-export const IMAGE_PLACEHOLDER  = "/images/profile_avatar_placeholder.png";
+export const IMAGE_PLACEHOLDER  = "/images/lot_placeholder.png";

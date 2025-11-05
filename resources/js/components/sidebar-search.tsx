@@ -2,6 +2,8 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Link } from "@inertiajs/react";
 import { route } from "ziggy-js";
+import { useDebounced } from "@/hooks/use-debounced";
+import { useAbortableFetch } from "@/hooks/use-abortable-fetch";
 
 type Result = { id: number; name: string; cover_url: string };
 
@@ -10,41 +12,52 @@ export function SidebarSearch() {
     const [open, setOpen] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
     const [results, setResults] = React.useState<Result[]>([]);
-    const timer = React.useRef<number | null>(null);
 
-    const doSearch = React.useCallback(async (value: string) => {
-        if (value.trim().length < 2) {
-            setResults([]);
-            setOpen(false);
-            return;
-        }
-        setLoading(true);
-        try {
-            const url = route("lots.search", { q: value });
-            const res = await fetch(url, {
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-            });
-            const json = await res.json();
-            setResults(json?.data ?? []);
-            setOpen(true);
-        } catch {
-            setResults([]);
-            setOpen(false);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const debounced = useDebounced(q, 250);
+    const run = useAbortableFetch();
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setQ(value);
-        if (timer.current) window.clearTimeout(timer.current);
-        timer.current = window.setTimeout(() => doSearch(value), 250) as unknown as number;
+        setQ(e.target.value);
     };
 
     const onBlur = () => {
         setTimeout(() => setOpen(false), 120);
     };
+
+    React.useEffect(() => {
+        const value = debounced.trim();
+        if (value.length < 2) {
+            setResults([]);
+            setOpen(false);
+            return;
+        }
+
+        let mounted = true;
+        setLoading(true);
+
+        run(route("lots.search", { q: value }), {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+        })
+            .then(async ({ res, aborted }) => {
+                if (aborted || !mounted) return;
+                const json = await res.json();
+                setResults(json?.data ?? []);
+                setOpen(true);
+            })
+            .catch(() => {
+                if (mounted) {
+                    setResults([]);
+                    setOpen(false);
+                }
+            })
+            .finally(() => {
+                if (mounted) setLoading(false);
+            });
+
+        return () => {
+            mounted = false;
+        };
+    }, [debounced, run]);
 
     return (
         <div className="relative">
@@ -55,6 +68,7 @@ export function SidebarSearch() {
                 onBlur={onBlur}
                 placeholder="Search..."
             />
+
             {open && (
                 <div className="absolute left-0 right-0 z-50 mt-2 max-h-80 overflow-auto rounded-md border bg-background shadow">
                     {loading && (

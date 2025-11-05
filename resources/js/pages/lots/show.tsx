@@ -1,11 +1,11 @@
 import React from "react";
-import { Head, Link, useForm, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Lot } from "@/types/lots";
-import { Heart, Pencil, ArrowLeft } from "lucide-react";
+import { Pencil, ArrowLeft } from "lucide-react";
 import { route } from "ziggy-js";
 import { LotDownloadButton } from "@/components/lots/lot-download-button";
 import {
@@ -15,40 +15,43 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel";
+import { FavouriteToggle } from "@/components/common/FavouriteToggle";
+import {LotSpecsGrid, SpecItem} from "@/components/lots/lot-specs";
+import {LotAuthor} from "@/components/lots/lot-author";
 
-export default function LotShow({
-                                    lot,
-                                    isOwner,
-                                    isFavorited = false,
-                                }: {
-    lot: Lot & {
-        user?: { id: number; name: string; email?: string; avatar_url?: string };
-        images: { id: number; url: string; position: number }[];
-        download_link?: string | null;
-    };
+type PageProps = {
+    lot: Lot;
     isOwner: boolean;
-    isFavorited?: boolean;
-}) {
-    const { post, processing } = useForm();
-    const [faved, setFaved] = React.useState<boolean>(isFavorited);
+    isFavorited: boolean;
+    isAdmin: boolean;
+};
 
-    const toggleFavourite = () => {
-        setFaved((v) => !v);
-        post(route("lots.favorite.toggle", lot.id), {
-            preserveScroll: true,
-            onError: () => setFaved((v) => !v),
-        });
+export default function LotShow(props: PageProps) {
+    const { lot, isOwner } = props;
+    const { isAdmin } = (usePage().props as unknown as PageProps);
+
+    const canModerate = isAdmin && lot.status !== "confirmed";
+
+    const approve = () => {
+        router.post(route("admin.lots.approve", { lot: lot.id }), {}, { preserveScroll: true });
     };
 
-    const hasImages = (lot.images?.length ?? 0) > 0;
-    const manyImages = (lot.images?.length ?? 0) > 1;
+    const reject = () => {
+        router.post(route("admin.lots.invalidate", { lot: lot.id }), {}, { preserveScroll: true });
+    };
+
+    const images = lot.images ?? [];
+    const hasImages = images.length > 0;
+    const manyImages = images.length > 1;
+
+    const initialLiked = props.isFavorited;
+    const initialCount = lot.favorites_count ?? 0;
 
     return (
         <MainLayout>
             <Head title={lot.name} />
 
             <div className="container mx-auto max-w-screen-xl px-4 py-8">
-                {/* Header */}
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Link href={route("dashboard")}>
@@ -61,29 +64,23 @@ export default function LotShow({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* Favourite */}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className={[
-                                "gap-2 transition-colors",
-                                faved
-                                    ? "border-red-400/50 text-red-600 bg-red-50 hover:bg-red-100"
-                                    : "hover:bg-muted/60",
-                            ].join(" ")}
-                            onClick={toggleFavourite}
-                            disabled={processing}
-                            aria-pressed={faved}
-                            title={faved ? "Remove from favourites" : "Add to favourites"}
-                        >
-                            <Heart className="h-4 w-4" fill={faved ? "currentColor" : "none"} />
-                            {faved ? "Favourited" : "Favourite"}
-                        </Button>
+                        {canModerate && lot.status === "pending" && (
+                            <div className="flex gap-2">
+                                <Button onClick={approve}>Approve</Button>
+                                <Button variant="destructive" onClick={reject}>Reject</Button>
+                            </div>
+                        )}
 
-                        {/* Download (если есть ссылка) */}
+                        <FavouriteToggle
+                            lotId={lot.id}
+                            initialLiked={initialLiked}
+                            initialCount={initialCount}
+                            size="md"
+                            showCount
+                        />
+
                         <LotDownloadButton href={lot.download_link} />
 
-                        {/* Edit */}
                         {isOwner && (
                             <Link href={route("lots.edit", lot.id)}>
                                 <Button
@@ -99,7 +96,6 @@ export default function LotShow({
                     </div>
                 </div>
 
-                {/* Gallery — вернули карусель */}
                 <Card className="mb-6">
                     <CardContent className="p-3 md:p-4">
                         {hasImages ? (
@@ -107,7 +103,7 @@ export default function LotShow({
                                 <div className="aspect-video w-full overflow-hidden rounded-xl border bg-muted">
                                     <Carousel className="h-full w-full">
                                         <CarouselContent className="h-full">
-                                            {lot.images
+                                            {images
                                                 .slice()
                                                 .sort((a, b) => a.position - b.position)
                                                 .map((img) => (
@@ -156,23 +152,21 @@ export default function LotShow({
 
                         <section className="rounded-xl border p-4 md:p-5">
                             <h2 className="mb-3 text-lg font-medium">Details</h2>
-                            <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+                            <LotSpecsGrid>
                                 <SpecItem label="Lot size" value={lot.lot_size} />
                                 <SpecItem label="Content" value={lot.content_type} />
                                 <SpecItem label="Furnishing" value={lot.furnishing} />
                                 <SpecItem label="Type" value={lot.lot_type} />
                                 <SpecItem label="Bedrooms" value={lot.bedrooms ?? "—"} />
                                 <SpecItem label="Bathrooms" value={lot.bathrooms ?? "—"} />
-                            </dl>
+                            </LotSpecsGrid>
                         </section>
 
                         {(lot.creator_id || lot.creator_link) && (
                             <section className="rounded-xl border p-4 md:p-5">
                                 <h2 className="mb-3 text-lg font-medium">Creator</h2>
                                 <div className="flex flex-wrap items-center gap-3">
-                                    {lot.creator_id && (
-                                        <Badge variant="secondary">{lot.creator_id}</Badge>
-                                    )}
+                                    {lot.creator_id && <Badge variant="secondary">{lot.creator_id}</Badge>}
                                     {lot.creator_link && (
                                         <a
                                             href={lot.creator_link}
@@ -190,31 +184,13 @@ export default function LotShow({
 
                     <aside className="rounded-xl border p-4 md:p-5">
                         <h2 className="mb-3 text-lg font-medium">Author</h2>
-                        <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 overflow-hidden rounded-full border">
-                                <img
-                                    src={lot.user?.avatar_url ?? "/images/profile_avatar_placeholder.png"}
-                                    alt={lot.user?.name ?? "User"}
-                                    className="h-full w-full object-cover"
-                                />
-                            </div>
-
-                            <div className="min-w-0">
-                                <div className="truncate font-medium">{lot.user?.name ?? "Unknown"}</div>
-                            </div>
-                        </div>
+                        <LotAuthor
+                            name={lot.user?.name}
+                            avatarUrl={lot.user?.avatar_url}
+                        />
                     </aside>
                 </div>
             </div>
         </MainLayout>
-    );
-}
-
-function SpecItem({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div className="flex items-center justify-between gap-4 rounded-lg border bg-background/50 px-3 py-2">
-            <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="text-sm font-medium">{value}</dd>
-        </div>
     );
 }

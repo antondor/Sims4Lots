@@ -48,6 +48,7 @@ class ProfileController extends Controller
                 'favourites' => $favouritesCount,
             ],
             'latestLots' => $latestLots,
+            'isOwner' => auth()->check() && auth()->id() === $user->id,
         ]);
     }
 

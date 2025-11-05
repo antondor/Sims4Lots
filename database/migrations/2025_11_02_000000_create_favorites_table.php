@@ -13,7 +13,8 @@ return new class extends Migration {
             $table->foreignId('lot_id')->constrained('lots')->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['user_id','lot_id']);
+            $table->unique(['user_id', 'lot_id']);
+            $table->index(['lot_id', 'created_at']);
         });
     }
 

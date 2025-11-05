@@ -17,6 +17,20 @@ Route::get('/u/{user}', [UserPublicController::class, 'show'])
     ->whereNumber('user')
     ->name('users.show');
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/lots/pending', [LotController::class, 'pendingList'])
+        ->name('admin.lots.pending');
+
+    Route::post('/admin/lots/{lot}/approve', [LotController::class, 'approve'])
+        ->name('admin.lots.approve')
+        ->middleware('can:admin');
+
+    Route::post('/admin/lots/{lot}/invalidate', [LotController::class, 'invalidate'])
+        ->name('admin.lots.invalidate')
+        ->middleware('can:admin');
+});
+
+
 Route::prefix('lots')->name('lots.')->group(function () {
     Route::get('search', [LotController::class, 'search'])->name('search');
     Route::get('{lot}', [LotController::class, 'view'])
@@ -31,6 +45,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register',[AuthController::class, 'register'])->name('register.attempt');
 });
+
 
 Route::middleware('auth')->group(function () {
 

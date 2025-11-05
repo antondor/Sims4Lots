@@ -1,15 +1,11 @@
 import * as React from "react";
-import {Link, router, usePage} from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import { ChevronUp, ChevronDown, CircleUserRound, LogOut, Settings, Heart, Folder, User } from "lucide-react";
 import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuLabel,
+    DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import {route} from "ziggy-js";
+import { route } from "ziggy-js";
 
 export function NavFooter() {
     const { props } = usePage();
@@ -19,16 +15,10 @@ export function NavFooter() {
     if (!user) {
         return (
             <div className="flex w-full gap-2 p-3">
-                <Link
-                    href={route("login")}
-                    className="inline-flex w-1/2 items-center justify-center rounded-md border px-3 py-2 text-sm"
-                >
+                <Link href={route("login")} className="inline-flex w-1/2 items-center justify-center rounded-md border px-3 py-2 text-sm">
                     Sign in
                 </Link>
-                <Link
-                    href={route("register")}
-                    className="inline-flex w-1/2 items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
-                >
+                <Link href={route("register")} className="inline-flex w-1/2 items-center justify-center rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground">
                     Register
                 </Link>
             </div>
@@ -45,12 +35,7 @@ export function NavFooter() {
                     >
                         <div className="relative h-9 w-9 overflow-hidden rounded-full border">
                             {user.avatar_url ? (
-                                <img
-                                    src={user.avatar_url}
-                                    alt={user.name}
-                                    className="h-full w-full object-cover"
-                                    loading="lazy"
-                                />
+                                <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" loading="lazy" />
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                                     <CircleUserRound className="h-5 w-5" />
@@ -60,18 +45,14 @@ export function NavFooter() {
 
                         <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-medium">{user.name}</div>
-                            {user.email ? (
-                                <div className="truncate text-xs text-muted-foreground">{user.email}</div>
-                            ) : null}
+                            {user.email && <div className="truncate text-xs text-muted-foreground">{user.email}</div>}
                         </div>
 
                         {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
                     </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent side="top" align="end" className="w-56"
-                                     sideOffset={8}
-                                     alignOffset={-5}>
+                <DropdownMenuContent side="top" align="end" className="w-56" sideOffset={8} alignOffset={-5}>
                     <DropdownMenuLabel className="text-xs text-muted-foreground">Account</DropdownMenuLabel>
 
                     <DropdownMenuItem asChild>

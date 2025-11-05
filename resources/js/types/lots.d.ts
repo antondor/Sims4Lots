@@ -1,9 +1,20 @@
 import type { User } from "@/types";
+import { LOT_SIZES, CONTENT_TYPES, FURNISHINGS, LOT_TYPES, LOT_STATUSES } from "@/constants/lots";
 
-export type LotSize = "20x15" | "30x20" | "40x30" | "50x50" | "64x64";
-export type ContentType = "CC" | "NoCC";
-export type Furnishing = "Furnished" | "Unfurnished";
-export type LotType = "Residential" | "Community";
+export type LotSize = typeof LOT_SIZES[number];
+export type ContentType = typeof CONTENT_TYPES[number];
+export type Furnishing = typeof FURNISHINGS[number];
+export type LotType = typeof LOT_TYPES[number];
+export type LotStatus = typeof LOT_STATUSES[number];
+
+export type LotImage = {
+    id: number;
+    url: string;
+    position: number;
+    is_cover?: boolean;
+};
+
+export type PreviewUser = { id: number; name: string; avatar?: string | null; avatar_url?: string | null };
 
 export interface Lot {
     id: number;
@@ -19,39 +30,35 @@ export interface Lot {
     lot_type: LotType;
     bedrooms: number | null;
     bathrooms: number | null;
+    status: LotStatus;
+    favorites_count?: number;
     created_at: string;
     updated_at: string;
-    user?: { id: number; name: string; avatar?: string | null; avatar_url?: string };
+    user?: PreviewUser;
     images?: LotImage[];
     cover_image?: LotImage | null;
+    is_favorited?: boolean;
+    isFavorited?: boolean;
 }
 
-export type LotImage = {
-    id: number;
-    url: string;
-    position: number;
-    is_cover?: boolean;
+export type LotsFilters = {
+    lotType?: LotType;
+    sizes?: LotSize[];
+    contentTypes?: ContentType[];
+    furnishings?: Furnishing[];
+    bedroomsMin?: number | "";
+    bedroomsMax?: number | "";
+    bathroomsMin?: number | "";
+    bathroomsMax?: number | "";
+    query?: string;
+    user_id?: number;
 };
 
-export interface LotsFiltersInterface {
-    query?: string;
-    lot_type?: LotType | "Any";
-    lot_size?: LotSize | "Any";
-    furnishing?: Furnishing | "Any";
-    content_type?: ContentType | "Any";
-    bedroomsMin?: number;
-    bedroomsMax?: number;
-    bathroomsMin?: number;
-    bathroomsMax?: number;
-    user_id?: number;
-    is_closed?: 0 | 1 | "Any";
-}
-
 export type Enums = {
-    lot_sizes: string[];
-    content_types: string[];
-    furnishings: string[];
-    lot_types: string[];
+    lot_sizes: readonly string[];
+    content_types: readonly string[];
+    furnishings: readonly string[];
+    lot_types: readonly string[];
 };
 
 export type FormType = {
@@ -60,10 +67,10 @@ export type FormType = {
     creator_id: string | null;
     creator_link: string | null;
     download_link: string | null;
-    lot_size: string;
-    content_type: string;
-    furnishing: string;
-    lot_type: string;
+    lot_size: LotSize | "";
+    content_type: ContentType | "";
+    furnishing: Furnishing | "";
+    lot_type: LotType | "";
     bedrooms: number | string;
     bathrooms: number | string;
     images: File[];

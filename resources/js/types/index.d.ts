@@ -1,19 +1,10 @@
-import { InertiaLinkProps } from '@inertiajs/react';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon } from "lucide-react";
 
-export interface Auth {
-    user: User;
-}
+export interface Auth { user: User; }
 
-export interface BreadcrumbItem {
-    title: string;
-    href: string;
-}
+export interface BreadcrumbItem { title: string; href: string; }
 
-export interface NavGroup {
-    title: string;
-    items: NavItem[];
-}
+export interface NavGroup { title: string; items: NavItem[]; }
 
 export interface NavItem {
     title: string;
@@ -41,6 +32,12 @@ export interface User {
     updated_at: string;
 }
 
+export type PaginationLink = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
 export interface PaginatedData<T = unknown> {
     current_page: number | null;
     data: T[];
@@ -52,8 +49,8 @@ export interface PaginatedData<T = unknown> {
     path: string | null;
     per_page: number | null;
     prev_page_url: string | null;
-    from: string | null;
-    to: string | null;
+    from: number | null;
+    to: number | null;
     total: number | null;
     [key: string]: unknown;
 }

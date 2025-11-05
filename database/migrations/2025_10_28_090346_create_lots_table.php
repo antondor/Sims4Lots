@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('name');
             $table->string('description')->nullable();
+            $table->integer('favorites_count')->nullable();
             $table->string('creator_id')->nullable();
             $table->string('creator_link')->nullable();
             $table->string('download_link')->nullable();
@@ -22,6 +23,8 @@ return new class extends Migration
             $table->enum('lot_type', ['Residential','Community']);
             $table->tinyInteger('bedrooms')->nullable();
             $table->tinyInteger('bathrooms')->nullable();
+            $table->enum('status', ['pending','confirmed','invalid'])
+                ->default('pending');
             $table->timestamps();
             $table->softDeletes();
         });

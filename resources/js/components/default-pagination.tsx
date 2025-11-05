@@ -7,76 +7,58 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import {PaginatedData} from "@/types";
-import {LotsFiltersInterface} from "@/types/lots";
+import type { PaginatedData } from "@/types";
+import type { LotsFilters } from "@/types/lots";
+import { buildQuery } from "@/lib/build-query";
 
-export function DefaultPagination<T>({ data, filters }: { data: PaginatedData<T>, filters?: LotsFiltersInterface }) {
-    if (!data.last_page || data.last_page <= 1) return null;
+export function DefaultPagination<T>({data, filters,}: { data: PaginatedData<T>; filters?: LotsFilters; }) {
+    const currentPage = data.current_page ?? 1;
+    const lastPage = data.last_page ?? 1;
+    if (lastPage <= 1) return null;
 
-    const { current_page, last_page } = data;
-    const pageWindow = 1;
+    const basePath =
+        data.path ??
+        (typeof window !== "undefined" ? window.location.pathname : "");
 
     const pages: (number | "...")[] = [];
+    const pageWindow = 1;
 
-    for (let i = 1; i <= last_page; i++) {
-        if (
-            i === 1 ||
-            i === last_page ||
-            (i >= (current_page ?? 1) - pageWindow &&
-                i <= (current_page ?? 1) + pageWindow)
-        ) {
-            pages.push(i);
-        } else if (pages[pages.length - 1] !== "...") {
-            pages.push("...");
-        }
+    for (let i = 1; i <= lastPage; i++) {
+        const near = i >= currentPage - pageWindow && i <= currentPage + pageWindow;
+        if (i === 1 || i === lastPage || near) pages.push(i);
+        else if (pages[pages.length - 1] !== "...") pages.push("...");
     }
 
-    const buildUrl = (page: number) => {
-        const params = new URLSearchParams();
-        if (filters) {
-            Object.entries(filters).forEach(([key, value]) => {
-                if (value && value !== "Any") {
-                    params.set(key, value);
-                }
-            });
-        }
-        params.set("page", String(page));
-        return `${data.path}?${params.toString()}`;
-    };
+    const buildUrl = (page: number) =>
+        `${basePath}${buildQuery({ ...(filters ?? {}), page })}`;
 
     return (
         <Pagination className="overflow-x-auto">
             <PaginationContent>
-                {/* Previous */}
                 <PaginationItem>
                     <PaginationPrevious
-                        href={data.prev_page_url ? buildUrl((current_page ?? 1) - 1) : "#"}
+                        href={data.prev_page_url ? buildUrl(currentPage - 1) : "#"}
                         isActive={!!data.prev_page_url}
                     />
                 </PaginationItem>
 
-                {/* Page buttons */}
-                {pages.map((page, idx) =>
-                    page === "..." ? (
-                        <PaginationItem key={`ellipsis-${idx}`}>
+                {pages.map((p, i) =>
+                    p === "..." ? (
+                        <PaginationItem key={`e-${i}`}>
                             <PaginationEllipsis />
                         </PaginationItem>
                     ) : (
-                        <PaginationItem key={`page-${page}`}>
-                            <PaginationLink
-                                href={buildUrl(page)}
-                                isActive={page === current_page}
-                            >
-                                {page}
+                        <PaginationItem key={`p-${p}`}>
+                            <PaginationLink href={buildUrl(p)} isActive={p === currentPage}>
+                                {p}
                             </PaginationLink>
                         </PaginationItem>
                     )
                 )}
 
-                {/* Next */}
                 <PaginationItem>
                     <PaginationNext
-                        href={data.next_page_url ? buildUrl((current_page ?? 1) + 1) : "#"}
+                        href={data.next_page_url ? buildUrl(currentPage + 1) : "#"}
                         isActive={!!data.next_page_url}
                     />
                 </PaginationItem>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { route } from "ziggy-js";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function ProfileEdit() {
     const { props } = usePage();
@@ -14,6 +15,9 @@ export default function ProfileEdit() {
     const { data, setData, processing } = useForm<{
         name: string;
         email: string;
+        about: string | null;
+        external_url: string | null;
+        sims_gallery_id: string | null;
         current_password: string;
         password: string;
         password_confirmation: string;
@@ -21,6 +25,9 @@ export default function ProfileEdit() {
     }>({
         name: user?.name ?? "",
         email: user?.email ?? "",
+        about: user?.about ?? "",
+        external_url: user?.external_url ?? "",
+        sims_gallery_id: user?.sims_gallery_id ?? "",
         current_password: "",
         password: "",
         password_confirmation: "",
@@ -37,11 +44,13 @@ export default function ProfileEdit() {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-
         const fd = new FormData();
         fd.append("_method", "PATCH");
         fd.append("name", data.name ?? "");
         fd.append("email", data.email ?? "");
+        fd.append("about", data.about ?? "");
+        fd.append("external_url", data.external_url ?? "");
+        fd.append("sims_gallery_id", data.sims_gallery_id ?? "");
         if (data.current_password) fd.append("current_password", data.current_password);
         if (data.password) fd.append("password", data.password);
         if (data.password_confirmation) fd.append("password_confirmation", data.password_confirmation);
@@ -69,6 +78,7 @@ export default function ProfileEdit() {
                 </div>
 
                 <form onSubmit={submit} className="space-y-8">
+                    {/* Avatar */}
                     <section className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="h-16 w-16 overflow-hidden rounded-full border">
@@ -115,6 +125,7 @@ export default function ProfileEdit() {
                         </div>
                     </section>
 
+                    {/* Basic */}
                     <section className="grid gap-6 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                             <Label htmlFor="name" className="mb-2">Name</Label>
@@ -129,6 +140,44 @@ export default function ProfileEdit() {
                         </div>
                     </section>
 
+                    {/* Public profile fields */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-medium">Public profile</h2>
+
+                        <div className="grid gap-6">
+                            <div>
+                                <Label htmlFor="about" className="mb-2">Bio</Label>
+                                <Textarea id="about" rows={5} value={data.about ?? ""} onChange={(e) => setData("about", e.target.value)} />
+                                {pageErrors.about && <p className="mt-1 text-sm text-red-500">{pageErrors.about}</p>}
+                            </div>
+
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <div>
+                                    <Label htmlFor="external_url" className="mb-2">External portfolio URL</Label>
+                                    <Input
+                                        id="external_url"
+                                        type="url"
+                                        placeholder="https://example.com"
+                                        value={data.external_url ?? ""}
+                                        onChange={(e) => setData("external_url", e.target.value)}
+                                    />
+                                    {pageErrors.external_url && <p className="mt-1 text-sm text-red-500">{pageErrors.external_url}</p>}
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="sims_gallery_id" className="mb-2">Sims 4 Gallery ID</Label>
+                                    <Input
+                                        id="sims_gallery_id"
+                                        value={data.sims_gallery_id ?? ""}
+                                        onChange={(e) => setData("sims_gallery_id", e.target.value)}
+                                    />
+                                    {pageErrors.sims_gallery_id && <p className="mt-1 text-sm text-red-500">{pageErrors.sims_gallery_id}</p>}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Password */}
                     <section className="space-y-4">
                         <h2 className="text-lg font-medium">Change password</h2>
                         <div className="grid gap-6 sm:grid-cols-2">
