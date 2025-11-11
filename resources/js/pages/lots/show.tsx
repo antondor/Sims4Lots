@@ -18,6 +18,8 @@ import {
 import { FavouriteToggle } from "@/components/common/FavouriteToggle";
 import {LotSpecsGrid, SpecItem} from "@/components/lots/lot-specs";
 import {LotAuthor} from "@/components/lots/lot-author";
+import {toast} from "sonner";
+import {PageHeader} from "@/components/page-header";
 
 type PageProps = {
     lot: Lot;
@@ -33,11 +35,19 @@ export default function LotShow(props: PageProps) {
     const canModerate = isAdmin && lot.status !== "confirmed";
 
     const approve = () => {
-        router.post(route("admin.lots.approve", { lot: lot.id }), {}, { preserveScroll: true });
+        router.patch(route("admin.lots.approve", lot.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => toast.success("Lot approved"),
+            onError: () => toast.error("Failed to approve lot"),
+        });
     };
 
     const reject = () => {
-        router.post(route("admin.lots.invalidate", { lot: lot.id }), {}, { preserveScroll: true });
+        router.patch(route("admin.lots.invalidate", lot.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => toast.success("Lot rejected"),
+            onError: () => toast.error("Failed to reject lot"),
+        });
     };
 
     const images = lot.images ?? [];
@@ -50,6 +60,12 @@ export default function LotShow(props: PageProps) {
     return (
         <MainLayout>
             <Head title={lot.name} />
+            <PageHeader
+                breadcrumbs={[
+                    { title: "Home", href: route("dashboard") },
+                    { title: lot.name },
+                ]}
+            />
 
             <div className="container mx-auto max-w-screen-xl px-4 py-8">
                 <div className="mb-6 flex items-center justify-between">

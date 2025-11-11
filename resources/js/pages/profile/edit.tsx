@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { route } from "ziggy-js";
 import { Textarea } from "@/components/ui/textarea";
+import {toast} from "sonner";
+import {PageHeader} from "@/components/page-header";
 
 export default function ProfileEdit() {
     const { props } = usePage();
@@ -59,15 +61,21 @@ export default function ProfileEdit() {
         router.post(route("profile.update"), fd, {
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => {
-                if (preview && preview !== user?.avatar_url) URL.revokeObjectURL(preview);
-            },
+            onSuccess: () => toast.success("Profile updated"),
+            onError: () => toast.error("Failed to update profile"),
         });
     };
 
     return (
         <MainLayout>
             <Head title="Edit profile" />
+            <PageHeader
+                breadcrumbs={[
+                    { title: "Home", href: route("dashboard") },
+                    { title: "Profile", href: route("profile.show") },
+                    { title: "Edit" },
+                ]}
+            />
             <div className="container mx-auto max-w-screen-sm px-4 py-8">
                 <div className="mb-6 flex items-center justify-between">
                     <div>

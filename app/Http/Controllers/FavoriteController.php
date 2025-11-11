@@ -43,6 +43,6 @@ class FavoriteController extends Controller
             return response()->json(['status' => 'ok', 'action' => $status]);
         }
 
-        return back()->with('success', $status === 'added' ? 'Added to favourites.' : 'Removed from favourites.');
+        return back()->with('success', $status === 'added' ? 'Added to favourites' : 'Removed from favourites');
     }
 }

@@ -16,15 +16,10 @@ export function DeleteLotButton({ lotId, lotName }: { lotId: number; lotName?: s
 
     const onConfirm = () => {
         setLoading(true);
-        router.delete(route("lots.destroy", { lot: lotId }), {
+        router.delete(route("lots.destroy", lotId), {
             preserveScroll: true,
-            onSuccess: () => {
-                toast.success("Lot deleted", { description: lotName ?? `ID ${lotId}` });
-                setOpen(false);
-            },
-            onError: () => {
-                toast.error("Failed to delete", { description: "Try again later." });
-            },
+            onSuccess: () => toast.success(lotName ? `Deleted "${lotName}"` : "Lot deleted"),
+            onError: () => toast.error("Could not delete lot"),
             onFinish: () => setLoading(false),
         });
     };

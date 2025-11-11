@@ -1,32 +1,38 @@
 import * as React from "react";
 import { router } from "@inertiajs/react";
+import { toast } from "sonner";
 
-export function useToggleFavourite(initialLiked: boolean, url: string, initialCount = 0) {
-    const [liked, setLiked] = React.useState(initialLiked);
-    const [busy, setBusy] = React.useState(false);
+type UseToggleFavouriteArgs = {
+    url: string;
+    initialLiked: boolean;
+    initialCount?: number;
+};
+
+export function useToggleFavourite({ url, initialLiked, initialCount = 0 }: UseToggleFavouriteArgs) {
+    const [liked, setLiked] = React.useState<boolean>(initialLiked);
     const [count, setCount] = React.useState<number>(initialCount);
-
-    React.useEffect(() => { setLiked(initialLiked); }, [initialLiked]);
-    React.useEffect(() => { setCount(initialCount); }, [initialCount]);
+    const [busy, setBusy] = React.useState<boolean>(false);
 
     const toggle = React.useCallback(() => {
-        if (busy || !url) return;
-        const next = !liked;
-        const delta = next ? 1 : -1;
+        if (!url || busy) return;
 
-        setLiked(next);
-        setCount((c) => Math.max(0, c + delta));
+        const nextLiked = !liked;
+        const nextCount = Math.max(0, count + (nextLiked ? 1 : -1));
+
+        setLiked(nextLiked);
+        setCount(nextCount);
         setBusy(true);
 
         router.post(url, {}, {
             preserveScroll: true,
             onError: () => {
-                setLiked(!next);
-                setCount((c) => Math.max(0, c - delta));
+                setLiked(liked);
+                setCount(count);
+                toast.error("Could not update favourites");
             },
             onFinish: () => setBusy(false),
         });
-    }, [busy, liked, url]);
+    }, [url, busy, liked, count]);
 
-    return { liked, busy, count, toggle };
+    return { liked, count, busy, toggle };
 }

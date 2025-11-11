@@ -7,6 +7,7 @@ import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { route } from "ziggy-js";
 import {IMAGE_PLACEHOLDER, resolveSrc} from "@/lib";
+import {PageHeader} from "@/components/page-header";
 
 export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> }) {
     const approve = (id: number) =>
@@ -17,14 +18,15 @@ export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> })
     return (
         <MainLayout>
             <Head title="Pending lots" />
+            <PageHeader
+                breadcrumbs={[
+                    { title: "Home", href: route("dashboard") },
+                    { title: "Admin" },
+                    { title: "Pending lots" },
+                ]}
+                title="Pending lots"
+            />
             <div className="container mx-auto px-4 py-8">
-                <div className="mb-6 flex items-center justify-between">
-                    <h1 className="text-2xl font-semibold">Pending Lots</h1>
-                    <Link href={route("dashboard")}>
-                        <Button variant="ghost">Back</Button>
-                    </Link>
-                </div>
-
                 {lots.data.length === 0 ? (
                     <p className="text-muted-foreground">No pending lots.</p>
                 ) : (

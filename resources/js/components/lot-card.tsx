@@ -7,8 +7,6 @@ import { Link } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import {resolveSrc, AVATAR_PLACEHOLDER, IMAGE_PLACEHOLDER} from "@/lib";
 import { FavouriteToggle } from "@/components/common/FavouriteToggle";
-// (опционально) если хочешь красивый бадж статуса — подключи:
-// import { StatusBadge } from "@/components/common/StatusBadge";
 
 type Props = { lot: Lot & { is_favorited?: boolean; isFavorited?: boolean } };
 

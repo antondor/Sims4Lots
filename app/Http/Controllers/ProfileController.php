@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\Lot;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -29,26 +30,28 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        $lotsCount = Lot::where('user_id', $user->id)->count();
+        $lotsCount        = Lot::where('user_id', $user->id)->count();
+        $favouritesCount  = $user->favoriteLots()->count();
 
-        $favouritesCount = 0;
-
-        $latestLots = Lot::with(['images','user'])
+        $latestLots = Lot::query()
             ->where('user_id', $user->id)
+            ->with(['images', 'user'])
+            ->withCount(['favoritedBy as favorites_count'])
+            ->when($request->user(), fn ($q) => $q->withFavorited($user->id))
             ->latest()
             ->take(6)
             ->get();
 
         return Inertia::render('profile/show', [
-            'user' => $request->user()->only([
+            'user' => $user->only([
                 'id','name','avatar_url','about','external_url','sims_gallery_id','created_at'
             ]),
             'stats' => [
-                'lots' => $lotsCount,
-                'favourites' => $favouritesCount,
+                'lots'        => $lotsCount,
+                'favourites'  => $favouritesCount,
             ],
             'latestLots' => $latestLots,
-            'isOwner' => auth()->check() && auth()->id() === $user->id,
+            'isOwner'    => true,
         ]);
     }
 
@@ -57,8 +60,8 @@ class ProfileController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
-        $user->name  = $data['name'];
-        $user->email = $data['email'];
+        $fillable = ['name', 'email', 'about', 'external_url', 'sims_gallery_id'];
+        $user->fill(Arr::only($data, $fillable));
 
         if (!empty($data['password'])) {
             if (empty($data['current_password']) || !Hash::check($data['current_password'], $user->password)) {
@@ -87,10 +90,8 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return redirect()->route('profile.edit')->with('success', 'Profile updated.');
+        return redirect()->route('profile.show')->with('success', 'Profile updated');
     }
-
-
 
     public function destroyAvatar(Request $request)
     {

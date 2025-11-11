@@ -6,22 +6,20 @@ import { LotsList } from "@/components/lots-list";
 import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { route } from "ziggy-js";
+import {PageHeader} from "@/components/page-header";
 
 export default function FavouritesIndex({ lots }: { lots: PaginatedData<Lot> }) {
     return (
         <MainLayout>
             <Head title="Favourites" />
+            <PageHeader
+                breadcrumbs={[
+                    { title: "Home", href: route("dashboard") },
+                    { title: "Favourites" },
+                ]}
+                title="Favourites"
+            />
             <div className="container mx-auto px-4 py-8">
-                <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="mb-1 text-2xl font-semibold">Favourites</h1>
-                        <p className="text-sm text-muted-foreground">Lots you’ve liked</p>
-                    </div>
-                    <Link href={route("lots.create")}>
-                        <Button>Create lot</Button>
-                    </Link>
-                </div>
-
                 {lots.data.length === 0 ? (
                     <div className="rounded-lg border p-8 text-center">
                         <p className="mb-4 text-muted-foreground">You don’t have any favourites yet.</p>

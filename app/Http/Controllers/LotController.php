@@ -170,7 +170,6 @@ class LotController extends Controller
 
         $base = Lot::query()
             ->where('user_id', $userId)
-            ->withCount(['favoritedBy as favorites_count'])
             ->with([
                 'coverImage:id,lot_id,filename,position',
                 'user:id,name,avatar',
@@ -181,7 +180,12 @@ class LotController extends Controller
             ->paginate(9)
             ->withQueryString();
 
-        return Inertia::render('lots/mine', ['lots' => $lots]);
+        $pendingCount = Lot::where('user_id', $userId)->where('status', 'pending')->count();
+
+        return Inertia::render('lots/mine', [
+            'lots' => $lots,
+            'pendingCount' => $pendingCount,
+        ]);
     }
 
     public function pendingList(Request $request)
@@ -199,6 +203,7 @@ class LotController extends Controller
         return Inertia::render('admin/lots/pending', ['lots' => $lots]);
     }
 
+
     public function store(Request $request)
     {
         $data = Validator::make($request->all(), $this->rules(true))->validate();
@@ -210,12 +215,25 @@ class LotController extends Controller
         ]);
 
         if ($request->hasFile('images')) {
-            /** @var UploadedFile[] $files */
             $files = $request->file('images');
-            $this->storeLotImages($lot, $files, 0);
+            foreach ($files as $idx => $file) {
+                $ext  = $file->getClientOriginalExtension();
+                $dir  = "images/lots/{$lot->id}";
+                $name = Str::uuid().'.'.$ext;
+
+                Storage::disk('s3')->putFileAs($dir, $file, $name);
+
+                LotImage::create([
+                    'lot_id'   => $lot->id,
+                    'filename' => $name,
+                    'position' => $idx,
+                ]);
+            }
         }
 
-        return redirect()->route('dashboard')->with('success', 'Lot created successfully.');
+        return redirect()
+            ->route('lots.mine')
+            ->with('info', 'Your lot was submitted for review');
     }
 
     public function approve(Request $request, Lot $lot)

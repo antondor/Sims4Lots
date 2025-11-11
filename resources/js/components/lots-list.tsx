@@ -7,6 +7,7 @@ import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { DefaultPagination } from "@/components/default-pagination";
 import { route } from "ziggy-js";
+import {PageHeader} from "@/components/page-header";
 
 type Props = {
     lots: PaginatedData<Lot>;
@@ -46,10 +47,11 @@ export const LotsList: React.FC<Props> = ({
         <>
             {showHeader && (
                 <div className="mb-5 flex w-full items-end justify-between gap-4">
-                    <h2 className="mt-2 min-w-0">
-                        <span className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight">{title}</span>
-                        {subtitle && <span className="text-muted-foreground block text-sm">{subtitle}</span>}
-                    </h2>
+                    <PageHeader
+                        breadcrumbs={[{ title: "Home", href: route("dashboard") }]}
+                        title="Dashboard"
+                        subtitle="Browse Sims 4 builds and lots"
+                    />
 
                     {(showCreateButton || showFilters) && (
                         <div className="flex items-center gap-2 shrink-0 self-start">

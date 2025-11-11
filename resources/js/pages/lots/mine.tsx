@@ -1,41 +1,66 @@
-import React from "react";
-import { Head, Link } from "@inertiajs/react";
+import * as React from "react";
 import MainLayout from "@/layouts/main-layout";
-import { Button } from "@/components/ui/button";
-import { LotsList } from "@/components/lots-list";
+import { Head, Link } from "@inertiajs/react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
+import { DefaultPagination } from "@/components/default-pagination";
+import { LotCard } from "@/components/lot-card";
 import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
-import { route } from "ziggy-js";
+import {route} from "ziggy-js";
+import {PageHeader} from "@/components/page-header";
 
-export default function MyLots({ lots }: { lots: PaginatedData<Lot> }) {
+type Props = {
+    lots: PaginatedData<Lot>;
+    pendingCount: number;
+};
+
+export default function LotsMine({ lots, pendingCount }: Props) {
     return (
         <MainLayout>
             <Head title="My lots" />
+            <PageHeader
+                breadcrumbs={[
+                    { title: "Home", href: route("dashboard") },
+                    { title: "My lots" },
+                ]}
+                title="My lots"
+            />
+
             <div className="container mx-auto px-4 py-8">
-                <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="mb-1 text-2xl font-semibold">My lots</h1>
-                        <p className="text-sm text-muted-foreground">All lots you’ve created</p>
-                    </div>
-                    <Link href={route("lots.create")}>
-                        <Button>Create lot</Button>
-                    </Link>
-                </div>
+                {pendingCount > 0 && (
+                    <Alert className="mb-6">
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>Under review</AlertTitle>
+                        <AlertDescription>
+                            {pendingCount === 1
+                                ? "You have 1 lot awaiting moderation. It isn’t public yet, but you can view and edit it here"
+                                : `You have ${pendingCount} lots awaiting moderation. They aren’t public yet, but you can view and edit them here`}
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {lots.data.length === 0 ? (
-                    <div className="rounded-lg border p-8 text-center">
-                        <p className="mb-4 text-muted-foreground">You haven’t created any lots yet.</p>
-                        <Link href={route("lots.create")}>
-                            <Button>Create your first lot</Button>
-                        </Link>
-                    </div>
+                    <Card>
+                        <CardContent className="p-6 text-sm text-muted-foreground">
+                            You haven’t created any lots yet.
+                        </CardContent>
+                    </Card>
                 ) : (
-                    <LotsList
-                        lots={lots}
-                        showHeader={false}
-                        showFilters={false}
-                        showCreateButton={false}
-                    />
+                    <>
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {lots.data.map((lot) => (
+                                <div key={lot.id} className="min-w-0">
+                                    <LotCard lot={lot} />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-6">
+                            <DefaultPagination data={lots} />
+                        </div>
+                    </>
                 )}
             </div>
         </MainLayout>
