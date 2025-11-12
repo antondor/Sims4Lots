@@ -21,6 +21,7 @@ class UpdateProfileRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
 
             'about'          => ['nullable', 'string', 'max:2000'],
+            'short_about'      => ['nullable','string','max:50'],
             'external_url'   => ['nullable', 'url', 'max:255'],
             'sims_gallery_id'=> ['nullable', 'string', 'max:255'],
 

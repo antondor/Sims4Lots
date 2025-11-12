@@ -19,6 +19,7 @@ type UserDto = {
     name: string;
     avatar_url: string;
     about?: string | null;
+    short_about?: string | null;
     external_url?: string | null;
     sims_gallery_id?: string | null;
     created_at: string;
@@ -43,7 +44,12 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
     const lots = latestLots ?? [];
     const hasLots = lots.length > 0;
 
-    const completenessParts = [Boolean(user.about), Boolean(user.external_url), Boolean(user.sims_gallery_id)];
+    const completenessParts = [
+        Boolean(user.short_about),
+        Boolean(user.about),
+        Boolean(user.external_url),
+        Boolean(user.sims_gallery_id),
+    ];
     const completeScore = Math.round((completenessParts.filter(Boolean).length / completenessParts.length) * 100);
 
     return (
@@ -59,7 +65,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                             Joined {dayjs(user.created_at).format("MMMM D, YYYY")} ({dayjs(user.created_at).fromNow()})
                         </p>
                         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-                            Welcome to {user.name}&apos;s profile!
+                            {user.short_about ?? null}
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
                             {isOwner && (

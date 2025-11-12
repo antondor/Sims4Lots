@@ -1,13 +1,14 @@
+// resources/js/pages/profile/edit.tsx
 import React from "react";
 import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { route } from "ziggy-js";
 import { Textarea } from "@/components/ui/textarea";
-import {toast} from "sonner";
-import {BreadcrumbItem} from "@/types";
+import { route } from "ziggy-js";
+import { toast } from "sonner";
+import type { BreadcrumbItem } from "@/types";
 
 export default function ProfileEdit() {
     const { props } = usePage();
@@ -19,11 +20,13 @@ export default function ProfileEdit() {
         { title: user.name, href: route("profile.show") },
         { title: "Edit" },
     ];
+
     const pageErrors = ((props as any).errors ?? {}) as Record<string, string>;
 
     const { data, setData, processing } = useForm<{
         name: string;
         email: string;
+        short_about: string | null;
         about: string | null;
         external_url: string | null;
         sims_gallery_id: string | null;
@@ -34,6 +37,7 @@ export default function ProfileEdit() {
     }>({
         name: user?.name ?? "",
         email: user?.email ?? "",
+        short_about: user?.short_about ?? "",
         about: user?.about ?? "",
         external_url: user?.external_url ?? "",
         sims_gallery_id: user?.sims_gallery_id ?? "",
@@ -57,6 +61,7 @@ export default function ProfileEdit() {
         fd.append("_method", "PATCH");
         fd.append("name", data.name ?? "");
         fd.append("email", data.email ?? "");
+        fd.append("short_about", data.short_about ?? "");
         fd.append("about", data.about ?? "");
         fd.append("external_url", data.external_url ?? "");
         fd.append("sims_gallery_id", data.sims_gallery_id ?? "");
@@ -88,7 +93,6 @@ export default function ProfileEdit() {
                 </div>
 
                 <form onSubmit={submit} className="space-y-8">
-                    {/* Avatar */}
                     <section className="space-y-4">
                         <div className="flex items-center gap-4">
                             <div className="h-16 w-16 overflow-hidden rounded-full border">
@@ -103,7 +107,9 @@ export default function ProfileEdit() {
                                 <Input id="avatar" type="file" accept="image/*" onChange={(e) => onAvatarChange(e.target.files?.[0] ?? null)} />
                                 {pageErrors.avatar && <p className="text-sm text-red-500">{pageErrors.avatar}</p>}
                                 <div className="flex gap-2">
-                                    <Button type="button" variant="secondary" onClick={() => onAvatarChange(null)}>Clear</Button>
+                                    <Button type="button" variant="secondary" onClick={() => onAvatarChange(null)}>
+                                        Clear
+                                    </Button>
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -135,7 +141,6 @@ export default function ProfileEdit() {
                         </div>
                     </section>
 
-                    {/* Basic */}
                     <section className="grid gap-6 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                             <Label htmlFor="name" className="mb-2">Name</Label>
@@ -150,11 +155,23 @@ export default function ProfileEdit() {
                         </div>
                     </section>
 
-                    {/* Public profile fields */}
                     <section className="space-y-4">
                         <h2 className="text-lg font-medium">Public profile</h2>
 
                         <div className="grid gap-6">
+                            <div>
+                                <Label htmlFor="short_about" className="mb-2">Short intro</Label>
+                                <Input
+                                    id="short_about"
+                                    maxLength={280}
+                                    placeholder="A short tagline shown under your name"
+                                    value={data.short_about ?? ""}
+                                    onChange={(e) => setData("short_about", e.target.value)}
+                                />
+                                {pageErrors.short_about && <p className="mt-1 text-sm text-red-500">{pageErrors.short_about}</p>}
+                                <p className="mt-1 text-xs text-muted-foreground">Up to 280 characters.</p>
+                            </div>
+
                             <div>
                                 <Label htmlFor="about" className="mb-2">Bio</Label>
                                 <Textarea id="about" rows={5} value={data.about ?? ""} onChange={(e) => setData("about", e.target.value)} />
@@ -187,13 +204,17 @@ export default function ProfileEdit() {
                         </div>
                     </section>
 
-                    {/* Password */}
                     <section className="space-y-4">
                         <h2 className="text-lg font-medium">Change password</h2>
                         <div className="grid gap-6 sm:grid-cols-2">
                             <div>
                                 <Label htmlFor="current_password" className="mb-2">Current password</Label>
-                                <Input id="current_password" type="password" value={data.current_password} onChange={(e) => setData("current_password", e.target.value)} />
+                                <Input
+                                    id="current_password"
+                                    type="password"
+                                    value={data.current_password}
+                                    onChange={(e) => setData("current_password", e.target.value)}
+                                />
                                 {pageErrors.current_password && <p className="mt-1 text-sm text-red-500">{pageErrors.current_password}</p>}
                             </div>
                             <div>
@@ -203,13 +224,20 @@ export default function ProfileEdit() {
                             </div>
                             <div className="sm:col-span-2">
                                 <Label htmlFor="password_confirmation" className="mb-2">Confirm new password</Label>
-                                <Input id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData("password_confirmation", e.target.value)} />
+                                <Input
+                                    id="password_confirmation"
+                                    type="password"
+                                    value={data.password_confirmation}
+                                    onChange={(e) => setData("password_confirmation", e.target.value)}
+                                />
                             </div>
                         </div>
                     </section>
 
                     <div className="flex items-center justify-end gap-3">
-                        <Link href={route("dashboard")} className="inline-flex"><Button type="button" variant="ghost">Cancel</Button></Link>
+                        <Link href={route("dashboard")} className="inline-flex">
+                            <Button type="button" variant="ghost">Cancel</Button>
+                        </Link>
                         <Button type="submit" disabled={processing}>Save changes</Button>
                     </div>
                 </form>

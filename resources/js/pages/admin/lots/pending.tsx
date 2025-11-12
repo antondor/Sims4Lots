@@ -6,8 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { route } from "ziggy-js";
-import {IMAGE_PLACEHOLDER, resolveSrc} from "@/lib";
-import {PageHeader} from "@/components/page-header";
+import {IMAGE_PLACEHOLDER} from "@/lib";
 import {BreadcrumbItem} from "@/types";
 
 export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> }) {
@@ -18,9 +17,10 @@ export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> })
     ];
 
     const approve = (id: number) =>
-        router.patch(route("admin.lots.approve", id), {}, { preserveScroll: true });
+        router.post(route("admin.lots.approve", { lot: id }), {}, { preserveScroll: true });
+
     const invalidate = (id: number) =>
-        router.patch(route("admin.lots.invalidate", id), {}, { preserveScroll: true });
+        router.post(route("admin.lots.invalidate", { lot: id }), {}, { preserveScroll: true });
 
     return (
         <MainLayout breadcrumbs={breadcrumbs}>

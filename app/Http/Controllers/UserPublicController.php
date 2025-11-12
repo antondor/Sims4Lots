@@ -36,6 +36,7 @@ class UserPublicController extends Controller
                     'name'       => $u->name,
                     'avatar_url' => $u->avatar_url,
                     'about'      => $u->about,
+                    'short_about'=> $u->short_about,
                     'created_at' => optional($u->created_at)->toISOString(),
                 ];
             });
@@ -57,7 +58,7 @@ class UserPublicController extends Controller
 
         return Inertia::render('profile/show', [
             'user' => $user->only([
-                'id','name','avatar_url','about','external_url','sims_gallery_id','created_at'
+                'id','name','avatar_url','about','short_about','external_url','sims_gallery_id','created_at'
             ]),
             'stats' => [
                 'lots' => $lotsCount,

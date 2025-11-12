@@ -21,6 +21,7 @@ class ProfileController extends Controller
                 'name'           => $request->user()->name,
                 'email'          => $request->user()->email,
                 'about'          => $request->user()->about,
+                'short_about'    => $request->user()->short_about,
                 'avatar'         => $request->user()->avatar,
                 'avatar_url'     => $request->user()->avatar_url,
                 'external_url'   => $request->user()->external_url,
@@ -39,7 +40,7 @@ class ProfileController extends Controller
 
         $latestLots = Lot::query()
             ->where('user_id', $user->id)
-            // ->confirmed() // uncomment if you want only confirmed lots
+            ->confirmed()
             ->with(['images','user'])
             ->withCount(['favoritedBy as favorites_count'])
             ->when($viewerId, fn ($q) => $q->withFavorited($viewerId))
@@ -49,7 +50,7 @@ class ProfileController extends Controller
 
         $topLot = Lot::query()
             ->where('user_id', $user->id)
-            // ->confirmed()
+            ->confirmed()
             ->with(['images','user'])
             ->withCount(['favoritedBy as favorites_count'])
             ->when($viewerId, fn ($q) => $q->withFavorited($viewerId))
@@ -59,7 +60,7 @@ class ProfileController extends Controller
 
         return Inertia::render('profile/show', [
             'user' => $user->only([
-                'id','name','avatar_url','about','external_url','sims_gallery_id','created_at'
+                'id','name','avatar_url','about','short_about','external_url','sims_gallery_id','created_at'
             ]),
             'stats' => [
                 'lots'       => $lotsCount,
@@ -76,7 +77,7 @@ class ProfileController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
-        $fillable = ['name', 'email', 'about', 'external_url', 'sims_gallery_id'];
+        $fillable = ['name', 'email', 'about', 'short_about', 'external_url', 'sims_gallery_id'];
         $user->fill(Arr::only($data, $fillable));
 
         if (!empty($data['password'])) {

@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password',
         'avatar',
         'about',
+        'short_about',
         'external_url',
         'sims_gallery_id',
         'is_admin',
