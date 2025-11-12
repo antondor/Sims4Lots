@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Lot;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class UserPublicController extends Controller
@@ -42,50 +43,28 @@ class UserPublicController extends Controller
         return response()->json(['data' => $users]);
     }
 
-    public function show(Request $request, User $user)
+
+    public function show(User $user)
     {
-        $viewerId = optional($request->user())->id;
-
         $lotsCount = Lot::where('user_id', $user->id)->count();
-        $favouritesCount = $viewerId ? $request->user()->favoriteLots()->count() : 0;
+        $favouritesCount = 0;
 
-        // последние лоты автора: отдаем оба алиаса
-        $latestLots = Lot::query()
+        $latestLots = Lot::with(['images','user'])
             ->where('user_id', $user->id)
-            ->with(['images','user'])
-            ->withCount([
-                'favoritedBy as favorites_total',
-                'favoritedBy as favorites_count',
-            ])
-            ->withFavorited($viewerId) // из трейта Favoritable
             ->latest()
-            ->take(12)
+            ->take(6)
             ->get();
-
-        // топ по лайкам: сортируем по нашему total, а также отдаем оба алиаса
-        $topLot = Lot::query()
-            ->where('user_id', $user->id)
-            ->with(['images','user'])
-            ->withCount([
-                'favoritedBy as favorites_total',
-                'favoritedBy as favorites_count',
-            ])
-            ->withFavorited($viewerId)
-            ->orderByDesc('favorites_total')
-            ->orderByDesc('updated_at')
-            ->first();
 
         return Inertia::render('profile/show', [
             'user' => $user->only([
                 'id','name','avatar_url','about','external_url','sims_gallery_id','created_at'
             ]),
             'stats' => [
-                'lots'       => $lotsCount,
+                'lots' => $lotsCount,
                 'favourites' => $favouritesCount,
             ],
             'latestLots' => $latestLots,
-            'topLot'     => $topLot,   // объект или null
-            'isOwner'    => (int) $viewerId === (int) $user->id,
+            'isOwner' => auth()->check() && auth()->id() === $user->id,
         ]);
     }
 }

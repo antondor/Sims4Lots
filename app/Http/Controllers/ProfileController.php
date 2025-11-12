@@ -17,14 +17,14 @@ class ProfileController extends Controller
     {
         return Inertia::render('profile/edit', [
             'user' => [
-                'id'         => $request->user()->id,
-                'name'       => $request->user()->name,
-                'email'      => $request->user()->email,
-                'about'      => $request->user()->about,
-                'avatar'     => $request->user()->avatar,
-                'avatar_url' => $request->user()->avatar_url,
-                'external_url' => $request->user()->external_url,
-                'sims_gallery_id' => $request->user()->sims_gallery_id,
+                'id'             => $request->user()->id,
+                'name'           => $request->user()->name,
+                'email'          => $request->user()->email,
+                'about'          => $request->user()->about,
+                'avatar'         => $request->user()->avatar,
+                'avatar_url'     => $request->user()->avatar_url,
+                'external_url'   => $request->user()->external_url,
+                'sims_gallery_id'=> $request->user()->sims_gallery_id,
             ],
         ]);
     }
@@ -32,28 +32,41 @@ class ProfileController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
+        $viewerId = $user?->id;
 
-        $lotsCount        = Lot::where('user_id', $user->id)->count();
-        $favouritesCount  = $user->favoriteLots()->count();
+        $lotsCount       = Lot::where('user_id', $user->id)->count();
+        $favouritesCount = $user->favoriteLots()->count();
 
         $latestLots = Lot::query()
             ->where('user_id', $user->id)
-            ->with(['images', 'user'])
+            // ->confirmed() // uncomment if you want only confirmed lots
+            ->with(['images','user'])
             ->withCount(['favoritedBy as favorites_count'])
-            ->when($request->user(), fn ($q) => $q->withFavorited($user->id))
+            ->when($viewerId, fn ($q) => $q->withFavorited($viewerId))
             ->latest()
-            ->take(6)
+            ->take(12)
             ->get();
+
+        $topLot = Lot::query()
+            ->where('user_id', $user->id)
+            // ->confirmed()
+            ->with(['images','user'])
+            ->withCount(['favoritedBy as favorites_count'])
+            ->when($viewerId, fn ($q) => $q->withFavorited($viewerId))
+            ->orderByDesc('favorites_count')
+            ->orderByDesc('updated_at')
+            ->first();
 
         return Inertia::render('profile/show', [
             'user' => $user->only([
                 'id','name','avatar_url','about','external_url','sims_gallery_id','created_at'
             ]),
             'stats' => [
-                'lots'        => $lotsCount,
-                'favourites'  => $favouritesCount,
+                'lots'       => $lotsCount,
+                'favourites' => $favouritesCount,
             ],
             'latestLots' => $latestLots,
+            'topLot'     => $topLot,
             'isOwner'    => true,
         ]);
     }
@@ -99,12 +112,12 @@ class ProfileController extends Controller
     public function destroyAvatar(Request $request)
     {
         $user = $request->user();
-        if (! $user->avatar) {
+        if (!$user->avatar) {
             return back();
         }
 
         if (str_starts_with($user->avatar, 'http')) {
-
+            // no-op for remote absolute URL
         } elseif (str_contains($user->avatar, '/')) {
             Storage::disk('s3')->delete($user->avatar);
         } else {

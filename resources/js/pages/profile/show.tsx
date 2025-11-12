@@ -27,9 +27,9 @@ type UserDto = {
 type Props = {
     user: UserDto;
     stats: { lots: number; favourites: number };
-    latestLots: (Lot & { favorites_total?: number; is_favorited?: boolean })[];
+    latestLots: (Lot & { favorites_count?: number; is_favorited?: boolean })[];
     isOwner: boolean;
-    topLot: (Lot & { favorites_total?: number; is_favorited?: boolean }) | null;
+    topLot: (Lot & { favorites_count?: number; is_favorited?: boolean }) | null;
 };
 
 export default function PublicUserShow({ user, stats, latestLots, isOwner, topLot }: Props) {
@@ -153,7 +153,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                             <div className="divide-y rounded-lg border">
                                 {lots.map((lot) => {
                                     const cover = (lot as any).cover_image?.url ?? lot.images?.[0]?.url ?? "/images/lot-placeholder.jpg";
-                                    const favCount = (lot as any).favorites_total ?? 0;
+                                    const favCount = (lot as any).favorites_count ?? 0;
 
                                     return (
                                         <div key={lot.id} className="flex items-center gap-3 p-3">
@@ -202,9 +202,6 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                             {topLot ? (
                                 <div className="min-w-0">
                                     <LotCard lot={topLot} />
-                                    <div className="mt-2 text-xs text-muted-foreground">
-                                        Likes: {(topLot as any).favorites_total ?? (topLot as any).favorites_count ?? 0}
-                                    </div>
                                 </div>
                             ) : (
                                 <Card>
