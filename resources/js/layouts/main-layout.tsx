@@ -1,21 +1,43 @@
+import * as React from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import React from "react";
 import { Toaster } from "sonner";
 import { FlashToaster } from "@/components/flash-toaster";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import type { BreadcrumbItem } from "@/types";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+type Props = {
+    children: React.ReactNode;
+    breadcrumbs?: BreadcrumbItem[];
+    rightSlot?: React.ReactNode;
+};
+
+export default function MainLayout({
+                                       children,
+                                       breadcrumbs = [{ title: "Home", href: "/dashboard" }],
+                                       rightSlot,
+                                   }: Props) {
     return (
         <SidebarProvider>
-            <AppSidebar />
-            <main className="flex-1">
-                <SidebarTrigger />
-                <div className="container mx-auto max-w-screen-2xl px-4">
-                    {children}
-                    <Toaster position="top-center" />
+            <div className="flex min-h-screen w-full">
+                <AppSidebar />
+                <div className="flex min-h-screen flex-1 flex-col">
+                    <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur">
+                        <div className="flex max-w-screen-2xl items-center gap-2 px-4 py-2">
+                            <SidebarTrigger className="-ml-1" />
+                            <Breadcrumbs breadcrumbs={breadcrumbs} />
+                            {rightSlot ? <div className="ml-auto">{rightSlot}</div> : null}
+                        </div>
+                    </header>
+
+                    <main className="mx-auto w-full max-w-screen-2xl px-4 pb-8 pt-4">
+                        {children}
+                    </main>
+
+                    <Toaster position="bottom-right" />
                     <FlashToaster />
                 </div>
-            </main>
+            </div>
         </SidebarProvider>
     );
 }

@@ -13,9 +13,9 @@ Route::redirect('/', '/dashboard');
 
 Route::get('/dashboard', [LotController::class, 'index'])->name('dashboard');
 
-Route::get('/u/{user}', [UserPublicController::class, 'show'])
-    ->whereNumber('user')
-    ->name('users.show');
+Route::get('/users', [UserPublicController::class, 'index'])->name('users.index');
+Route::get('/users/search', [UserPublicController::class, 'search'])->name('users.search');
+Route::get('/users/{user}', [UserPublicController::class, 'show'])->name('users.show');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin/lots/pending', [LotController::class, 'pendingList'])

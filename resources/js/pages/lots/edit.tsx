@@ -10,8 +10,15 @@ import { ImagesUploader } from "@/components/lots/image-uploader";
 import { ExistingImagesGrid } from "@/components/lots/existing-images-grid";
 import { FormActions } from "@/components/lots/form-actions";
 import {DeleteLotButton} from "@/components/lots/delete-lot-button";
+import {BreadcrumbItem} from "@/types";
 
 export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Home", href: route("dashboard") },
+        { title: lot.name, href: route("lots.view", { lot: lot.id }) },
+        { title: "Edit" },
+    ];
+
     const initial: FormType = {
         name: lot.name ?? "",
         description: lot.description ?? "",
@@ -85,18 +92,18 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
     };
 
     return (
-        <MainLayout>
+        <MainLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit: ${lot.name}`} />
 
-            <div className="container mx-auto max-w-screen-md px-4 py-8">
-                <div className="mb-6 flex items-center justify-between">
+            <div className="container mx-auto max-w-screen-md px-4">
+                <div className="flex items-center gap-3 mb-3">
                     <Link href={route("lots.view", { lot: lot.id })}>
                         <Button variant="ghost" className="gap-2">
                             <ArrowLeft className="h-4 w-4" />
                             Back
                         </Button>
                     </Link>
-                    <h1 className="text-xl font-semibold">Edit</h1>
+                    <h1 className="text-xl font-semibold">Edit {lot.name}</h1>
                     <span />
                 </div>
 

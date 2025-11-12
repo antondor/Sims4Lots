@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('name');
             $table->string('description')->nullable();
-            $table->integer('favorites_count')->nullable();
             $table->string('creator_id')->nullable();
             $table->string('creator_link')->nullable();
             $table->string('download_link')->nullable();

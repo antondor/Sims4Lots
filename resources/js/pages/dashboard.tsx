@@ -1,17 +1,17 @@
 import React from "react";
 import { Head } from "@inertiajs/react";
+import { type PaginatedData } from "@/types";
+import { LotsList } from "@/components/lots-list";
+import type { Lot } from "@/types/lots";
 import MainLayout from "@/layouts/main-layout";
-import {LotsList} from "@/components/lots-list";
-import {PaginatedData} from "@/types";
-import {Lot} from "@/types/lots";
 
 export default function Dashboard({ lots }: { lots: PaginatedData<Lot> }) {
     return (
-        <MainLayout>
+        <>
             <Head title="Dashboard" />
-            <div className="flex flex-col">
-                <LotsList lots={lots} />
-            </div>
-        </MainLayout>
+            <MainLayout>
+                <LotsList lots={lots} showHeader showFilters showCreateButton />
+            </MainLayout>
+        </>
     );
 }

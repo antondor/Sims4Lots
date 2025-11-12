@@ -1,22 +1,23 @@
-import React from 'react';
-import { createInertiaApp } from '@inertiajs/react';
-import { createRoot } from 'react-dom/client';
-import '../css/app.css'
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { createInertiaApp } from "@inertiajs/react";
+import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
+import MainLayout from "@/layouts/main-layout";
+import "../css/app.css";
 
 createInertiaApp({
-    resolve: (name) => {
-        const pages = import.meta.glob('./pages/**/*.tsx', { eager: true });
-        const page = pages[`./pages/${name}.tsx`] as any;
+    progress: { color: "#6366f1" },
+    resolve: async (name) => {
+        const mod: any = await resolvePageComponent(
+            `./pages/${name}.tsx`,
+            import.meta.glob("./pages/**/*.tsx")
+        );
 
-        if (!page) {
-            throw new Error(`Page ${name} not found`);
-        }
+        const Page = mod.default;
 
-        return page.default; // важно вернуть default
+        return mod;
     },
     setup({ el, App, props }) {
         createRoot(el).render(<App {...props} />);
     },
-}).catch((err) => {
-    console.error('Inertia app failed to load:', err);
 });

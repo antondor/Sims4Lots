@@ -7,6 +7,7 @@ import { TextField } from "@/components/upload-form/text-field";
 import { SelectField } from "@/components/upload-form/select-field";
 import { PageHeader } from "@/components/upload-form/page-header";
 import { ImageUpload } from "@/components/upload-form/image-upload";
+import {BreadcrumbItem} from "@/types";
 
 type Enums = {
     lot_sizes: string[];
@@ -16,6 +17,11 @@ type Enums = {
 };
 
 export default function CreateLot({ enums }: { enums: Enums }) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Home", href: route("dashboard") },
+        { title: "Create new lot" },
+    ];
+
     const { data, setData, post, processing, errors, reset } = useForm<{
         name: string;
         description: string | null;
@@ -79,9 +85,9 @@ export default function CreateLot({ enums }: { enums: Enums }) {
     const badSet = useMemo(() => new Set(badIndexes ?? []), [badIndexes]);
 
     return (
-        <MainLayout>
+        <MainLayout breadcrumbs={breadcrumbs}>
             <Head title="Create lot" />
-            <div className="container mx-auto max-w-screen-md px-4 py-8">
+            <div className="container mx-auto max-w-screen-md px-4">
                 <PageHeader
                     title="Create new lot"
                     subtitle="Fill the form to publish your Sims 4 lot"

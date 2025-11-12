@@ -10,6 +10,7 @@ import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import {route} from "ziggy-js";
 import {PageHeader} from "@/components/page-header";
+import {BreadcrumbItem} from "@/types";
 
 type Props = {
     lots: PaginatedData<Lot>;
@@ -17,18 +18,15 @@ type Props = {
 };
 
 export default function LotsMine({ lots, pendingCount }: Props) {
-    return (
-        <MainLayout>
-            <Head title="My lots" />
-            <PageHeader
-                breadcrumbs={[
-                    { title: "Home", href: route("dashboard") },
-                    { title: "My lots" },
-                ]}
-                title="My lots"
-            />
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Home", href: route("dashboard") },
+        { title: "My lots" },
+    ];
 
-            <div className="container mx-auto px-4 py-8">
+    return (
+        <MainLayout breadcrumbs={breadcrumbs}>
+            <Head title="My lots" />
+            <div className="container mx-auto px-4">
                 {pendingCount > 0 && (
                     <Alert className="mb-6">
                         <Info className="h-4 w-4" />

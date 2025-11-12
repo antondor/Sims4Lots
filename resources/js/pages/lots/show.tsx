@@ -20,6 +20,7 @@ import {LotSpecsGrid, SpecItem} from "@/components/lots/lot-specs";
 import {LotAuthor} from "@/components/lots/lot-author";
 import {toast} from "sonner";
 import {PageHeader} from "@/components/page-header";
+import {BreadcrumbItem} from "@/types";
 
 type PageProps = {
     lot: Lot;
@@ -30,6 +31,10 @@ type PageProps = {
 
 export default function LotShow(props: PageProps) {
     const { lot, isOwner } = props;
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Home", href: route("dashboard") },
+        { title: lot.name },
+    ];
     const { isAdmin } = (usePage().props as unknown as PageProps);
 
     const canModerate = isAdmin && lot.status !== "confirmed";
@@ -58,24 +63,12 @@ export default function LotShow(props: PageProps) {
     const initialCount = lot.favorites_count ?? 0;
 
     return (
-        <MainLayout>
+        <MainLayout breadcrumbs={breadcrumbs}>
             <Head title={lot.name} />
-            <PageHeader
-                breadcrumbs={[
-                    { title: "Home", href: route("dashboard") },
-                    { title: lot.name },
-                ]}
-            />
 
-            <div className="container mx-auto max-w-screen-xl px-4 py-8">
+            <div className="container mx-auto max-w-screen-xl px-4">
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Link href={route("dashboard")}>
-                            <Button variant="ghost" className="gap-2">
-                                <ArrowLeft className="h-4 w-4" />
-                                Back
-                            </Button>
-                        </Link>
                         <h1 className="text-2xl font-semibold">{lot.name}</h1>
                     </div>
 
@@ -109,6 +102,10 @@ export default function LotShow(props: PageProps) {
                                 </Button>
                             </Link>
                         )}
+
+                        <Link href={route("dashboard")}>
+                            <Button variant="outline">Back</Button>
+                        </Link>
                     </div>
                 </div>
 

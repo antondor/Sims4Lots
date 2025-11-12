@@ -7,7 +7,6 @@ import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { DefaultPagination } from "@/components/default-pagination";
 import { route } from "ziggy-js";
-import {PageHeader} from "@/components/page-header";
 
 type Props = {
     lots: PaginatedData<Lot>;
@@ -20,11 +19,9 @@ type Props = {
 
 export const LotsList: React.FC<Props> = ({
                                               lots,
-                                              showHeader = true,
-                                              showFilters = true,
-                                              showCreateButton = true,
-                                              title = "Lot Gallery",
-                                              subtitle = "Browse Sims 4 builds and lots",
+                                              showHeader = false,
+                                              showFilters = false,
+                                              showCreateButton = false,
                                           }) => {
     const handleApplyFilters = (filters: any) => {
         const q: Record<string, any> = {
@@ -37,7 +34,12 @@ export const LotsList: React.FC<Props> = ({
             bathroomsMin: filters.bathroomsMin || undefined,
             bathroomsMax: filters.bathroomsMax || undefined,
         };
-        router.get(route("dashboard"), q, { preserveState: true, preserveScroll: true, replace: true });
+
+        router.get(route("dashboard"), q, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     };
 
     const { props } = usePage();
@@ -46,13 +48,7 @@ export const LotsList: React.FC<Props> = ({
     return (
         <>
             {showHeader && (
-                <div className="mb-5 flex w-full items-end justify-between gap-4">
-                    <PageHeader
-                        breadcrumbs={[{ title: "Home", href: route("dashboard") }]}
-                        title="Dashboard"
-                        subtitle="Browse Sims 4 builds and lots"
-                    />
-
+                <div className="mb-5 flex w-full items-end justify-end gap-4">
                     {(showCreateButton || showFilters) && (
                         <div className="flex items-center gap-2 shrink-0 self-start">
                             {showCreateButton && user && (

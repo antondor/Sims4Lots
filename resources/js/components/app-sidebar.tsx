@@ -1,4 +1,4 @@
-import { CircleUserRound, Folder, HeartIcon, Home, Settings, ShieldCheck } from "lucide-react";
+import {Folder, HeartIcon, Home, Settings, ShieldCheck, User, UserSearch} from "lucide-react";
 import {
     Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
     SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
@@ -9,8 +9,9 @@ import { usePage } from "@inertiajs/react";
 
 const items = [
     { title: "Dashboard",  url: "/dashboard",  icon: Home },
-    { title: "Profile",    url: "/profile",    icon: CircleUserRound },
-    { title: "My lots",    url: "/lots/mine",  icon: Folder },
+    { title: "My Profile",    url: "/profile",    icon: User },
+    { title: "Search Users", url: "/users", icon: UserSearch },
+    { title: "My Lots",    url: "/lots/mine",  icon: Folder },
     { title: "Favourites", url: "/favourites", icon: HeartIcon },
     { title: "Settings",   url: "/settings",   icon: Settings },
 ];
@@ -53,7 +54,7 @@ export function AppSidebar() {
                                     <SidebarMenuButton asChild>
                                         <a href="/admin/lots/pending">
                                             <ShieldCheck />
-                                            <span>Pending lots</span>
+                                            <span>Pending Lots</span>
                                         </a>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

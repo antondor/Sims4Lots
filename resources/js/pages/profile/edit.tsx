@@ -7,11 +7,18 @@ import { Label } from "@/components/ui/label";
 import { route } from "ziggy-js";
 import { Textarea } from "@/components/ui/textarea";
 import {toast} from "sonner";
-import {PageHeader} from "@/components/page-header";
+import {BreadcrumbItem} from "@/types";
 
 export default function ProfileEdit() {
     const { props } = usePage();
     const user = (props as any).user || (props as any).auth?.user;
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Home", href: route("dashboard") },
+        { title: "Users", href: route("users.index") },
+        { title: user.name, href: route("profile.show") },
+        { title: "Edit" },
+    ];
     const pageErrors = ((props as any).errors ?? {}) as Record<string, string>;
 
     const { data, setData, processing } = useForm<{
@@ -67,22 +74,17 @@ export default function ProfileEdit() {
     };
 
     return (
-        <MainLayout>
+        <MainLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit profile" />
-            <PageHeader
-                breadcrumbs={[
-                    { title: "Home", href: route("dashboard") },
-                    { title: "Profile", href: route("profile.show") },
-                    { title: "Edit" },
-                ]}
-            />
-            <div className="container mx-auto max-w-screen-sm px-4 py-8">
+            <div className="container mx-auto max-w-screen-sm px-4">
                 <div className="mb-6 flex items-center justify-between">
                     <div>
                         <h1 className="mb-1 text-2xl font-semibold">Profile</h1>
                         <p className="text-sm text-muted-foreground">Update your account information</p>
                     </div>
-                    <Link href={route("dashboard")}><Button variant="outline">Back</Button></Link>
+                    <Link href={route("profile.show")}>
+                        <Button variant="outline">Back</Button>
+                    </Link>
                 </div>
 
                 <form onSubmit={submit} className="space-y-8">

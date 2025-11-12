@@ -20,8 +20,11 @@ class ProfileController extends Controller
                 'id'         => $request->user()->id,
                 'name'       => $request->user()->name,
                 'email'      => $request->user()->email,
+                'about'      => $request->user()->about,
                 'avatar'     => $request->user()->avatar,
                 'avatar_url' => $request->user()->avatar_url,
+                'external_url' => $request->user()->external_url,
+                'sims_gallery_id' => $request->user()->sims_gallery_id,
             ],
         ]);
     }

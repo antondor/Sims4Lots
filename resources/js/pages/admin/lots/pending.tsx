@@ -8,24 +8,23 @@ import type { Lot } from "@/types/lots";
 import { route } from "ziggy-js";
 import {IMAGE_PLACEHOLDER, resolveSrc} from "@/lib";
 import {PageHeader} from "@/components/page-header";
+import {BreadcrumbItem} from "@/types";
 
 export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> }) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Home", href: route("dashboard") },
+        { title: "Admin" },
+        { title: "Pending lots" },
+    ];
+
     const approve = (id: number) =>
         router.patch(route("admin.lots.approve", id), {}, { preserveScroll: true });
     const invalidate = (id: number) =>
         router.patch(route("admin.lots.invalidate", id), {}, { preserveScroll: true });
 
     return (
-        <MainLayout>
+        <MainLayout breadcrumbs={breadcrumbs}>
             <Head title="Pending lots" />
-            <PageHeader
-                breadcrumbs={[
-                    { title: "Home", href: route("dashboard") },
-                    { title: "Admin" },
-                    { title: "Pending lots" },
-                ]}
-                title="Pending lots"
-            />
             <div className="container mx-auto px-4 py-8">
                 {lots.data.length === 0 ? (
                     <p className="text-muted-foreground">No pending lots.</p>

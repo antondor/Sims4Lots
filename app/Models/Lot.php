@@ -18,8 +18,8 @@ class Lot extends Model
     ];
 
     protected $casts = [
-        'is_favorited'     => 'boolean',
-        'favorites_count'  => 'integer', // ← добавили: счетчик будет приходить как int
+        'is_favorited' => 'boolean',
+        // НЕ кастим favorites_count, мы будем использовать alias favorites_total
     ];
 
     public function favoritedBy()
@@ -34,6 +34,7 @@ class Lot extends Model
 
     public function coverImage()
     {
+        // можно оставить, не критично
         return $this->hasOne(LotImage::class)->orderBy('position');
     }
 
