@@ -23,6 +23,7 @@ return new class extends Migration
             $table->text('short_about')->nullable();
             $table->string('external_url')->nullable();
             $table->string('sims_gallery_id')->nullable();
+            $table->timestamp('last_seen_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

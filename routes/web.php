@@ -7,6 +7,7 @@ use App\Http\Controllers\LotImageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserPublicController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -15,9 +16,13 @@ Route::get('/dashboard', [LotController::class, 'index'])->name('dashboard');
 
 Route::get('/users', [UserPublicController::class, 'index'])->name('users.index');
 Route::get('/users/search', [UserPublicController::class, 'search'])->name('users.search');
-Route::get('/users/{user}', [UserPublicController::class, 'show'])
+Route::get('/users/{user}', function (User $user) {
+    return app(ProfileController::class)->showUser($user, auth()->user());
+})->name('users.show');
+
+Route::get('/favourites/{user}', [FavoriteController::class, 'index'])
     ->whereNumber('user')
-    ->name('users.show');
+    ->name('favourites.index');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin/lots/pending', [LotController::class, 'pendingList'])
@@ -50,7 +55,6 @@ Route::middleware('guest')->group(function () {
 
 
 Route::middleware('auth')->group(function () {
-
     Route::prefix('lots')->name('lots.')->group(function () {
         Route::get('create', [LotController::class, 'create'])->name('create');
         Route::get('mine',   [LotController::class, 'mine'])->name('mine');
@@ -79,7 +83,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('avatar',[ProfileController::class, 'destroyAvatar'])->name('avatar.destroy');
     });
 
-    Route::get('/favourites', [FavoriteController::class, 'index'])->name('favourites.index');
     Route::get('/settings',   [SettingsController::class, 'index'])->name('settings');
     Route::post('/logout',    [AuthController::class, 'logout'])->name('logout');
 });

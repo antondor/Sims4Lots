@@ -23,6 +23,8 @@ type UserDto = {
     external_url?: string | null;
     sims_gallery_id?: string | null;
     created_at: string;
+    last_seen_at?: string | null;
+    is_online?: boolean;
 };
 
 type Props = {
@@ -62,7 +64,13 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                         <h1 className="text-2xl font-semibold">{user.name}</h1>
                         <p className="mt-1 text-sm text-muted-foreground">
                             <CalendarDays className="mr-1 inline-block h-4 w-4" />
-                            Joined {dayjs(user.created_at).format("MMMM D, YYYY")} ({dayjs(user.created_at).fromNow()})
+                            Joined {dayjs(user.created_at).format("MMMM D, YYYY")} (
+                            {user.is_online
+                                ? "Online"
+                                : user.last_seen_at
+                                    ? `Last seen ${dayjs(user.last_seen_at).fromNow()}`
+                                    : dayjs(user.created_at).fromNow()}
+                            )
                         </p>
                         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
                             {user.short_about ?? null}
@@ -101,7 +109,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                                     </Button>
                                 </Link>
                             )}
-                            <Link href={route("favourites.index")}>
+                            <Link href={route("favourites.index", { user: user.id })}>
                                 <Button variant="ghost" className="gap-1">
                                     <Heart className="h-4 w-4" />
                                     Favourites

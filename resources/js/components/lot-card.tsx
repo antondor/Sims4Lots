@@ -1,18 +1,29 @@
 import React from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import {
+    ArrowRight,
+    Home,
+    Building2,
+    Maximize2,
+    Package,
+    Sofa,
+    BedDouble,
+    Bath,
+} from "lucide-react";
 import type { Lot } from "@/types/lots";
 import { Link } from "@inertiajs/react";
 import { route } from "ziggy-js";
-import {resolveSrc, AVATAR_PLACEHOLDER, IMAGE_PLACEHOLDER} from "@/lib";
+import { resolveSrc, AVATAR_PLACEHOLDER, IMAGE_PLACEHOLDER } from "@/lib";
 import { FavouriteToggle } from "@/components/common/FavouriteToggle";
+import {LotSpecRow} from "@/components/lots/spec-row";
 
 type Props = { lot: Lot & { is_favorited?: boolean; isFavorited?: boolean } };
 
 export function LotCard({ lot }: Props) {
     const userName = lot.user?.name ?? "Unknown user";
-    const userAvatar = lot.user?.avatar_url ?? resolveSrc(lot.user?.avatar) ?? AVATAR_PLACEHOLDER;
+    const userAvatar =
+        lot.user?.avatar_url ?? resolveSrc(lot.user?.avatar) ?? AVATAR_PLACEHOLDER;
 
     const lotId = (lot as any).id;
     const lotUrl = lotId ? route("lots.view", { lot: lotId }) : "#";
@@ -69,7 +80,9 @@ export function LotCard({ lot }: Props) {
                                 {userName}
                             </Link>
                         ) : (
-                            <div className="text-xs text-muted-foreground truncate">{userName}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                                {userName}
+                            </div>
                         )}
                     </div>
                 </CardTitle>
@@ -77,33 +90,32 @@ export function LotCard({ lot }: Props) {
 
             <div className="px-4 pb-2">
                 <div className="relative w-full overflow-hidden rounded-xl aspect-[4/3] sm:aspect-[16/9]">
-                    {lot.status && lot.status !== "confirmed" && (
-                        <div className="absolute left-2 top-2 z-20">
-              <span
-                  className={[
-                      "rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur border",
-                      lot.status === "pending"
-                          ? "bg-amber-50/80 text-amber-700 border-amber-200"
-                          : "bg-red-50/80 text-red-700 border-red-200",
-                  ].join(" ")}
-              >
-                {lot.status === "pending" ? "Pending" : "Rejected"}
-              </span>
-                            {/* или <StatusBadge status={lot.status} /> если используешь компонент */}
-                        </div>
-                    )}
+                    <div className="absolute right-2 top-2 z-20 flex items-center gap-2">
+                        {lot.status && lot.status !== "confirmed" && (
+                            <span
+                                className={[
+                                    "inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur border",
+                                    lot.status === "pending"
+                                        ? "bg-amber-50/80 text-amber-700 border-amber-200"
+                                        : "bg-red-50/80 text-red-700 border-red-200",
+                                ].join(" ")}
+                            >
+                                {lot.status === "pending" ? "Pending" : "Rejected"}
+                            </span>
+                        )}
 
-                    <div className="absolute right-2 top-2 z-20 pointer-events-none">
-                        {lotId ? (
-                            <FavouriteToggle
-                                lotId={lotId}
-                                initialLiked={initialLiked}
-                                initialCount={initialCount}
-                                className="pointer-events-auto"
-                                size="md"
-                                showCount
-                            />
-                        ) : null}
+                        <div className="pointer-events-none">
+                            {lotId ? (
+                                <FavouriteToggle
+                                    lotId={lotId}
+                                    initialLiked={initialLiked}
+                                    initialCount={initialCount}
+                                    className="pointer-events-auto"
+                                    size="md"
+                                    showCount
+                                />
+                            ) : null}
+                        </div>
                     </div>
 
                     <img
@@ -116,32 +128,56 @@ export function LotCard({ lot }: Props) {
                     <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 ease-out" />
 
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-200 ease-out">
-                        <div className="bg-gradient-to-t from-black/55 via-black/25 to-transparent px-4 pt-10 pb-3">
-                            <div className="grid grid-cols-[110px_1fr] gap-x-4 gap-y-1 text-white drop-shadow">
-                                <span className="text-[11px] opacity-80">Type</span>
-                                <span className="text-sm">{lot.lot_type}</span>
+                        <div className="bg-gradient-to-t from-black/55 via-black/25 to-transparent px-4 pt-10 pb-3 pointer-events-auto">
+                            <div className="flex flex-col gap-1 text-white drop-shadow">
+                                <LotSpecRow
+                                    icon={
+                                        isCommunity ? (
+                                            <Building2 className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <Home className="h-3.5 w-3.5" />
+                                        )
+                                    }
+                                    label="Type"
+                                    value={lot.lot_type}
+                                />
 
-                                <span className="text-[11px] opacity-80">Size</span>
-                                <span className="text-sm">{lot.lot_size}</span>
+                                <LotSpecRow
+                                    icon={<Maximize2 className="h-3.5 w-3.5" />}
+                                    label="Size"
+                                    value={lot.lot_size}
+                                />
 
-                                <span className="text-[11px] opacity-80">Content</span>
-                                <span className="text-sm">{lot.content_type}</span>
+                                <LotSpecRow
+                                    icon={<Package className="h-3.5 w-3.5" />}
+                                    label="Content"
+                                    value={lot.content_type}
+                                />
 
-                                <span className="text-[11px] opacity-80">Furnishing</span>
-                                <span className="text-sm">{lot.furnishing}</span>
+                                <LotSpecRow
+                                    icon={<Sofa className="h-3.5 w-3.5" />}
+                                    label="Furnishing"
+                                    value={lot.furnishing}
+                                />
 
                                 {!isCommunity && (
                                     <>
-                                        <span className="text-[11px] opacity-80">Bedrooms</span>
-                                        <span className="text-sm">{lot.bedrooms ?? 0}</span>
+                                        <LotSpecRow
+                                            icon={<BedDouble className="h-3.5 w-3.5" />}
+                                            label="Bedrooms"
+                                            value={lot.bedrooms ?? 0}
+                                        />
 
-                                        <span className="text-[11px] opacity-80">Bathrooms</span>
-                                        <span className="text-sm">{lot.bathrooms ?? 0}</span>
+                                        <LotSpecRow
+                                            icon={<Bath className="h-3.5 w-3.5" />}
+                                            label="Bathrooms"
+                                            value={lot.bathrooms ?? 0}
+                                        />
                                     </>
                                 )}
                             </div>
 
-                            <div className="mt-3 pointer-events-auto">
+                            <div className="mt-3">
                                 {lotId ? (
                                     <Button asChild variant="secondary" className="w-full">
                                         <Link href={lotUrl}>

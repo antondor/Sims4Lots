@@ -6,8 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {route} from "ziggy-js";
+import {BreadcrumbItem} from "@/types";
 
 export default function Login() {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Login" },
+    ];
+
     const { data, setData, post, processing, errors } = useForm({
         email: "",
         password: "",
@@ -20,7 +25,7 @@ export default function Login() {
     };
 
     return (
-        <MainLayout>
+        <MainLayout breadcrumbs={breadcrumbs}>
             <Head title="Login" />
             <div className="container mx-auto max-w-sm px-4 py-12 w-sm">
                 <h1 className="mb-6 text-2xl font-semibold">Sign in</h1>

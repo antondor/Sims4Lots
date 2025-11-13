@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Lot;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class UserPublicController extends Controller
@@ -32,40 +30,17 @@ class UserPublicController extends Controller
             ->get()
             ->map(function (User $u) {
                 return [
-                    'id'         => $u->id,
-                    'name'       => $u->name,
-                    'avatar_url' => $u->avatar_url,
-                    'about'      => $u->about,
-                    'short_about'=> $u->short_about,
-                    'created_at' => optional($u->created_at)->toISOString(),
+                    'id'           => $u->id,
+                    'name'         => $u->name,
+                    'avatar_url'   => $u->avatar_url,
+                    'about'        => $u->about,
+                    'short_about'  => $u->short_about,
+                    'created_at'   => optional($u->created_at)->toISOString(),
+                    'last_seen_at' => $u->last_seen_at?->toIso8601String(),
+                    'is_online'    => $u->is_online,
                 ];
             });
 
         return response()->json(['data' => $users]);
-    }
-
-
-    public function show(User $user)
-    {
-        $lotsCount = Lot::where('user_id', $user->id)->count();
-        $favouritesCount = 0;
-
-        $latestLots = Lot::with(['images','user'])
-            ->where('user_id', $user->id)
-            ->latest()
-            ->take(6)
-            ->get();
-
-        return Inertia::render('profile/show', [
-            'user' => $user->only([
-                'id','name','avatar_url','about','short_about','external_url','sims_gallery_id','created_at'
-            ]),
-            'stats' => [
-                'lots' => $lotsCount,
-                'favourites' => $favouritesCount,
-            ],
-            'latestLots' => $latestLots,
-            'isOwner' => auth()->check() && auth()->id() === $user->id,
-        ]);
     }
 }

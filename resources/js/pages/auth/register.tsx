@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {route} from "ziggy-js";
+import {BreadcrumbItem} from "@/types";
 
 export default function Register() {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: "Register" },
+    ];
+
     const { data, setData, post, processing, errors } = useForm({
         name: "",
         email: "",
@@ -20,7 +25,7 @@ export default function Register() {
     };
 
     return (
-        <MainLayout>
+        <MainLayout breadcrumbs={breadcrumbs}>
             <Head title="Register" />
             <div className="container mx-auto max-w-sm px-4 py-12">
                 <h1 className="mb-6 text-2xl font-semibold">Create account</h1>

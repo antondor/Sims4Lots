@@ -1,25 +1,63 @@
-import {Folder, HeartIcon, Home, Settings, ShieldCheck, User, UserSearch} from "lucide-react";
+import * as React from "react";
 import {
-    Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
-    SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
+    Folder,
+    HeartIcon,
+    Home,
+    Settings,
+    ShieldCheck,
+    User,
+    UserSearch,
+} from "lucide-react";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarFooter,
 } from "@/components/ui/sidebar";
 import { NavFooter } from "@/components/nav-footer";
 import { SidebarSearch } from "@/components/sidebar-search";
 import { usePage } from "@inertiajs/react";
+import { route } from "ziggy-js";
 
-const items = [
-    { title: "Dashboard",  url: "/dashboard",  icon: Home },
-    { title: "My Profile",    url: "/profile",    icon: User },
-    { title: "Search Users", url: "/users", icon: UserSearch },
-    { title: "My Lots",    url: "/lots/mine",  icon: Folder },
-    { title: "Favourites", url: "/favourites", icon: HeartIcon },
-    { title: "Settings",   url: "/settings",   icon: Settings },
-];
+type NavItem = {
+    title: string;
+    url: string;
+    icon: React.ComponentType<any>;
+};
 
 export function AppSidebar() {
     const { props } = usePage();
     const user = (props as any)?.auth?.user;
+    const isAuthenticated = !!user;
     const isAdmin = !!user?.is_admin;
+
+    const items: NavItem[] = React.useMemo(() => {
+        const base: NavItem[] = [
+            { title: "Dashboard", url: route("dashboard"), icon: Home },
+            { title: "Search Users", url: route("users.index"), icon: UserSearch },
+        ];
+
+        if (!isAuthenticated) {
+            return base;
+        }
+
+        return [
+            ...base,
+            { title: "My Profile", url: route("profile.show"), icon: User },
+            { title: "My Lots", url: route("lots.mine"), icon: Folder },
+            {
+                title: "Favourites",
+                url: route("favourites.index", { user: user.id }), // /favourites/{user}
+                icon: HeartIcon,
+            },
+            { title: "Settings", url: route("settings"), icon: Settings },
+        ];
+    }, [isAuthenticated, user?.id]);
 
     return (
         <Sidebar>

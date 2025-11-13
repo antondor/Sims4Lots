@@ -70,7 +70,7 @@ export function NavFooter() {
                     </DropdownMenuItem>
 
                     <DropdownMenuItem asChild>
-                        <Link href={route("favourites.index")}>
+                        <Link href={route("favourites.index", { user: user.id })}>
                             <Heart className="mr-2 h-4 w-4" />
                             <span>Favourites</span>
                         </Link>

@@ -27,20 +27,33 @@ export function FavouriteToggle({
                                     className,
                                     ariaLabel,
                                 }: Props) {
-    const finalUrl = url ?? (typeof lotId === "number" ? route("lots.favorite.toggle", lotId) : "");
+    const finalUrl =
+        url ?? (typeof lotId === "number" ? route("lots.favorite.toggle", lotId) : "");
     const { liked, count, busy, toggle } = useToggleFavourite({
         url: finalUrl,
         initialLiked,
         initialCount,
     });
 
-    const dims =
-        size === "sm" ? "h-7 w-7" :
-            size === "lg" ? "h-10 w-10" :
-                "h-8 w-8";
+    const sizeClasses =
+        size === "sm"
+            ? "h-7 px-2 text-[11px]"
+            : size === "lg"
+                ? "h-10 px-4 text-sm"
+                : "h-8 px-3 text-xs";
+
+    const iconSizeClasses =
+        size === "sm"
+            ? "h-3.5 w-3.5"
+            : size === "lg"
+                ? "h-4.5 w-4.5"
+                : "h-4 w-4";
+
+    const borderColor = liked ? "border-red-500" : "border-black";
+    const contentColor = liked ? "text-red-600" : "text-black";
 
     return (
-        <div className={cn("inline-flex items-center gap-2", className)}>
+        <div className={cn("inline-flex items-center", className)}>
             <button
                 type="button"
                 onClick={toggle}
@@ -48,21 +61,28 @@ export function FavouriteToggle({
                 aria-pressed={liked}
                 aria-label={ariaLabel ?? (liked ? "Remove from favourites" : "Add to favourites")}
                 className={cn(
-                    "inline-flex items-center justify-center rounded-full border transition-all",
-                    dims,
-                    "bg-background/70 backdrop-blur hover:bg-background/90 hover:shadow disabled:opacity-60 border-border"
+                    "inline-flex items-center justify-center rounded-full transition-all",
+                    "bg-background/70 backdrop-blur hover:bg-background/90 hover:shadow disabled:opacity-60",
+                    sizeClasses,
+                    borderColor
                 )}
             >
                 <Heart
-                    className="h-4 w-4 text-red-600"
+                    className={cn(iconSizeClasses, contentColor)}
                     color="currentColor"
                     fill={liked ? "currentColor" : "none"}
                 />
+                {showCount && (
+                    <span
+                        className={cn(
+                            "ml-2 font-medium tabular-nums",
+                            contentColor
+                        )}
+                    >
+                        {count}
+                    </span>
+                )}
             </button>
-
-            {showCount && (
-                <span className="text-xs font-medium tabular-nums text-red-600">{count}</span>
-            )}
         </div>
     );
 }

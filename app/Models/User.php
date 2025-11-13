@@ -26,6 +26,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_seen_at'      => 'datetime',
     ];
 
     protected $hidden = [
@@ -61,6 +62,15 @@ class User extends Authenticatable
         }
 
         return asset('images/profile_avatar_placeholder.png');
+    }
+
+    public function getIsOnlineAttribute(): bool
+    {
+        if (!$this->last_seen_at) {
+            return false;
+        }
+
+        return $this->last_seen_at->gt(now()->subMinutes(2));
     }
 
     public function favoriteLots()
