@@ -66,7 +66,6 @@ class LotController extends Controller
         ]);
     }
 
-
     public function search(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
@@ -115,11 +114,18 @@ class LotController extends Controller
 
         $isAdmin = auth()->check() && (auth()->user()->is_admin ?? false);
 
+        $pendingIds = Lot::query()
+            ->where('user_id', $lot->user_id)
+            ->where('status', 'pending')
+            ->pluck('id')
+            ->all();
+
         return Inertia::render('lots/show', [
             'lot'         => $lot,
             'isOwner'     => $isOwner,
             'isFavorited' => $isFavorited,
             'isAdmin'     => $isAdmin,
+            'pendingIds'  => $pendingIds,
         ]);
     }
 
@@ -177,16 +183,20 @@ class LotController extends Controller
             ->orderByDesc('created_at');
 
         $lots = $this->attachFavFlag($base)
+            ->withCount(['favoritedBy as favorites_count'])
             ->paginate(9)
             ->withQueryString();
 
-        $pendingCount = Lot::where('user_id', $userId)->where('status', 'pending')->count();
+        $pendingCount = Lot::where('user_id', $userId)
+            ->where('status', 'pending')
+            ->count();
 
         return Inertia::render('lots/mine', [
-            'lots' => $lots,
+            'lots'         => $lots,
             'pendingCount' => $pendingCount,
         ]);
     }
+
 
     public function pendingList(Request $request)
     {

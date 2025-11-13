@@ -19,7 +19,6 @@ import { FavouriteToggle } from "@/components/common/FavouriteToggle";
 import {LotSpecsGrid, SpecItem} from "@/components/lots/lot-specs";
 import {LotAuthor} from "@/components/lots/lot-author";
 import {toast} from "sonner";
-import {PageHeader} from "@/components/page-header";
 import {BreadcrumbItem} from "@/types";
 
 type PageProps = {
@@ -27,10 +26,11 @@ type PageProps = {
     isOwner: boolean;
     isFavorited: boolean;
     isAdmin: boolean;
+    pendingIds: number[];
 };
 
 export default function LotShow(props: PageProps) {
-    const { lot, isOwner } = props;
+    const { lot, isOwner, pendingIds } = props;
     const breadcrumbs: BreadcrumbItem[] = [
         { title: "Home", href: route("dashboard") },
         { title: lot.name },
@@ -38,6 +38,10 @@ export default function LotShow(props: PageProps) {
     const { isAdmin } = (usePage().props as unknown as PageProps);
 
     const canModerate = isAdmin && lot.status !== "confirmed";
+
+    const isPendingForCurrentUser = Array.isArray(pendingIds)
+        ? pendingIds.includes(lot.id)
+        : false;
 
     const approve = () => {
         router.patch(route("admin.lots.approve", lot.id), {}, {
@@ -70,6 +74,12 @@ export default function LotShow(props: PageProps) {
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <h1 className="text-2xl font-semibold">{lot.name}</h1>
+
+                        {isPendingForCurrentUser && (
+                            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
+                                Awaiting approve
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -108,6 +118,7 @@ export default function LotShow(props: PageProps) {
                         </Link>
                     </div>
                 </div>
+
 
                 <Card className="mb-6">
                     <CardContent className="p-3 md:p-4">
