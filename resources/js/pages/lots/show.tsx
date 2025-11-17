@@ -37,7 +37,7 @@ export default function LotShow(props: PageProps) {
         : false;
 
     const approve = () => {
-        router.patch(
+        router.post(
             route("admin.lots.approve", lot.id),
             {},
             {
@@ -49,7 +49,7 @@ export default function LotShow(props: PageProps) {
     };
 
     const reject = () => {
-        router.patch(
+        router.post(
             route("admin.lots.invalidate", lot.id),
             {},
             {

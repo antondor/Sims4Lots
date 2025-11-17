@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { FlashToaster } from "@/components/flash-toaster";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import type { BreadcrumbItem } from "@/types";
+import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 type Props = {
     children: React.ReactNode;
@@ -26,7 +27,10 @@ export default function MainLayout({
                         <div className="flex max-w-screen-2xl items-center gap-2 px-4 py-2">
                             <SidebarTrigger className="-ml-1" />
                             <Breadcrumbs breadcrumbs={breadcrumbs} />
-                            {rightSlot ? <div className="ml-auto">{rightSlot}</div> : null}
+                            <div className="ml-auto flex items-center gap-2">
+                                {rightSlot}
+                                <NotificationsDropdown />
+                            </div>
                         </div>
                     </header>
 

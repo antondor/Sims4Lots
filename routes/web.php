@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LotController;
 use App\Http\Controllers\LotImageController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserPublicController;
@@ -74,6 +75,14 @@ Route::middleware('auth')->group(function () {
 
         Route::post('{lot}/favorite', [FavoriteController::class, 'toggle'])
             ->whereNumber('lot')->name('favorite.toggle');
+    });
+
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::post('read-all', [NotificationController::class, 'markAllAsRead'])
+            ->name('read-all');
+
+        Route::post('{notification}/read', [NotificationController::class, 'markAsRead'])
+            ->name('read');
     });
 
     Route::prefix('profile')->name('profile.')->group(function () {

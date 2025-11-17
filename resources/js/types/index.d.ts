@@ -1,8 +1,22 @@
 import { LucideIcon } from "lucide-react";
 
-export interface Auth { user: User; }
+export interface Auth { user: User | null; }
 
 export interface BreadcrumbItem { title: string; href?: string; }
+
+export interface NotificationItem {
+    id: string;
+    type: string;
+    message: string;
+    url?: string | null;
+    created_at: string;
+    read_at?: string | null;
+}
+
+export interface NotificationsState {
+    unread_count: number;
+    items: NotificationItem[];
+}
 
 export interface NavGroup { title: string; items: NavItem[]; }
 
@@ -18,6 +32,7 @@ export interface SharedData {
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;
+    notifications?: NotificationsState | null;
     [key: string]: unknown;
 }
 
@@ -27,6 +42,8 @@ export interface User {
     email: string;
     avatar?: string | null;
     avatar_url?: string | null;
+    is_admin?: boolean;
+    last_seen_at?: string | null;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;

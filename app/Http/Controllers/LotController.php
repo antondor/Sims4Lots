@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lot;
 use App\Models\LotImage;
+use App\Notifications\LotApprovedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
@@ -252,6 +253,8 @@ class LotController extends Controller
 
         if ($lot->status !== 'confirmed') {
             $lot->update(['status' => 'confirmed']);
+
+            $lot->user?->notify(new LotApprovedNotification($lot));
         }
 
         if ($request->wantsJson()) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lot;
 use App\Models\User;
+use App\Notifications\LotLikedNotification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -45,6 +46,10 @@ class FavoriteController extends Controller
         } else {
             $user->favoriteLots()->attach($lot->id);
             $status = 'added';
+
+            if ($lot->user_id !== $user->id) {
+                $lot->user?->notify(new LotLikedNotification($lot, $user));
+            }
         }
 
         if ($request->wantsJson()) {
