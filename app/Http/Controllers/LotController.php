@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lot;
 use App\Models\LotImage;
 use App\Notifications\LotApprovedNotification;
+use App\Notifications\LotRejectedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
@@ -252,7 +253,7 @@ class LotController extends Controller
         abort_unless(Gate::allows('admin'), 403);
 
         if ($lot->status !== 'confirmed') {
-            $lot->update(['status' => 'confirmed']);
+            $lot->update(['status' => 'confirmed', 'rejection_reason' => null]);
 
             $lot->user?->notify(new LotApprovedNotification($lot));
         }
@@ -270,9 +271,16 @@ class LotController extends Controller
     {
         abort_unless(Gate::allows('admin'), 403);
 
-        if ($lot->status !== 'invalid') {
-            $lot->update(['status' => 'invalid']);
-        }
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $lot->update([
+            'status'            => 'invalid',
+            'rejection_reason'  => $data['reason'] ?? null,
+        ]);
+
+        $lot->user?->notify(new LotRejectedNotification($lot, $data['reason'] ?? null));
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'ok', 'lot_status' => $lot->status]);

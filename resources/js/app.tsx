@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createInertiaApp } from "@inertiajs/react";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import MainLayout from "@/layouts/main-layout";
+import { ThemeProvider } from "@/components/theme-provider";
 import "../css/app.css";
 
 createInertiaApp({
@@ -18,6 +19,10 @@ createInertiaApp({
         return mod;
     },
     setup({ el, App, props }) {
-        createRoot(el).render(<App {...props} />);
+        createRoot(el).render(
+            <ThemeProvider>
+                <App {...props} />
+            </ThemeProvider>,
+        );
     },
 });

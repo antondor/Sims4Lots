@@ -35,6 +35,7 @@ export function LotCard({ lot }: Props) {
     const isCommunity = lot.lot_type === "Community";
     const initialLiked = Boolean((lot as any).is_favorited ?? (lot as any).isFavorited);
     const initialCount = typeof lot.favorites_count === "number" ? lot.favorites_count : 0;
+    const canShowFavourite = lot.status === "confirmed";
 
     return (
         <Card className="gap-2 py-4 group w-full max-w-full rounded-xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
@@ -104,18 +105,20 @@ export function LotCard({ lot }: Props) {
                             </span>
                         )}
 
-                        <div className="pointer-events-none">
-                            {lotId ? (
-                                <FavouriteToggle
-                                    lotId={lotId}
-                                    initialLiked={initialLiked}
-                                    initialCount={initialCount}
-                                    className="pointer-events-auto"
-                                    size="md"
-                                    showCount
-                                />
-                            ) : null}
-                        </div>
+                        {canShowFavourite && (
+                            <div className="pointer-events-none">
+                                {lotId ? (
+                                    <FavouriteToggle
+                                        lotId={lotId}
+                                        initialLiked={initialLiked}
+                                        initialCount={initialCount}
+                                        className="pointer-events-auto"
+                                        size="md"
+                                        showCount
+                                    />
+                                ) : null}
+                            </div>
+                        )}
                     </div>
 
                     <img

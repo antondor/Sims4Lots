@@ -36,6 +36,7 @@ type Props = {
 };
 
 export default function PublicUserShow({ user, stats, latestLots, isOwner, topLot }: Props) {
+    const canShowFavourite = (lot: Lot) => lot.status === "confirmed";
     const breadcrumbs: BreadcrumbItem[] = [
         { title: "Home", href: route("dashboard") },
         { title: "Users", href: route("users.index") },
@@ -166,8 +167,9 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                         ) : (
                             <div className="divide-y rounded-lg border">
                                 {lots.map((lot) => {
-                                    const cover = (lot as any).cover_image?.url ?? lot.images?.[0]?.url ?? "/images/lot-placeholder.jpg";
-                                    const favCount = (lot as any).favorites_count ?? 0;
+                                const cover = (lot as any).cover_image?.url ?? lot.images?.[0]?.url ?? "/images/lot-placeholder.jpg";
+                                const favCount = (lot as any).favorites_count ?? 0;
+                                const showFavourite = canShowFavourite(lot);
 
                                     return (
                                         <div key={lot.id} className="flex items-center gap-3 p-3">
@@ -192,15 +194,17 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-2">
-                                                <FavouriteToggle
-                                                    lotId={lot.id}
-                                                    initialLiked={Boolean((lot as any).is_favorited)}
-                                                    initialCount={favCount}
-                                                    size="sm"
-                                                    showCount
-                                                />
-                                            </div>
+                                            {showFavourite && (
+                                                <div className="flex items-center gap-2">
+                                                    <FavouriteToggle
+                                                        lotId={lot.id}
+                                                        initialLiked={Boolean((lot as any).is_favorited)}
+                                                        initialCount={favCount}
+                                                        size="sm"
+                                                        showCount
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

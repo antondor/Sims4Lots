@@ -31,6 +31,7 @@ export interface Lot {
     bedrooms: number | null;
     bathrooms: number | null;
     status: LotStatus;
+    rejection_reason?: string | null;
     favorites_count?: number;
     created_at: string;
     updated_at: string;

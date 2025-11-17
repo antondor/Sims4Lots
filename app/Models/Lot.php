@@ -14,7 +14,7 @@ class Lot extends Model
     protected $fillable = [
         'user_id','name','description','creator_id','creator_link','download_link',
         'lot_size','content_type','furnishing','lot_type','bedrooms','bathrooms',
-        'status',
+        'status','rejection_reason',
     ];
 
     protected $casts = [

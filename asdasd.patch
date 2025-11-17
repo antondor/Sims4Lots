@@ -1,0 +1,1173 @@
+diff --git a/app/Http/Controllers/LotController.php b/app/Http/Controllers/LotController.php
+index edfd2b225926efc1fd91aa1a8aad9c0e80f63d2c..809e4c109bd12eca83023e4e7829eb59690f10a1 100644
+--- a/app/Http/Controllers/LotController.php
++++ b/app/Http/Controllers/LotController.php
+@@ -1,32 +1,33 @@
+ <?php
+
+ namespace App\Http\Controllers;
+
+ use App\Models\Lot;
+ use App\Models\LotImage;
+ use App\Notifications\LotApprovedNotification;
++use App\Notifications\LotRejectedNotification;
+ use Illuminate\Http\Request;
+ use Illuminate\Http\UploadedFile;
+ use Illuminate\Support\Facades\Gate;
+ use Illuminate\Support\Facades\Storage;
+ use Illuminate\Support\Facades\Validator;
+ use Illuminate\Support\Str;
+ use Inertia\Inertia;
+ use Illuminate\Database\Eloquent\Builder;
+ use Illuminate\Support\Facades\DB;
+
+ class LotController extends Controller
+ {
+     private const LOT_SIZES     = ['20x15','30x20','40x30','50x50','64x64'];
+     private const CONTENT_TYPES = ['CC','NoCC'];
+     private const FURNISHINGS   = ['Furnished','Unfurnished'];
+     private const LOT_TYPES     = ['Residential','Community'];
+
+     // ===== Public actions ==============================================================
+
+     public function index(Request $request)
+     {
+         $sizes        = (array) $request->query('sizes', []);
+         $contentTypes = (array) $request->query('contentTypes', []);
+         $furnishings  = (array) $request->query('furnishings', []);
+         $lotType      = $request->query('lotType');
+@@ -230,71 +231,78 @@ public function store(Request $request)
+             foreach ($files as $idx => $file) {
+                 $ext  = $file->getClientOriginalExtension();
+                 $dir  = "images/lots/{$lot->id}";
+                 $name = Str::uuid().'.'.$ext;
+
+                 Storage::disk('s3')->putFileAs($dir, $file, $name);
+
+                 LotImage::create([
+                     'lot_id'   => $lot->id,
+                     'filename' => $name,
+                     'position' => $idx,
+                 ]);
+             }
+         }
+
+         return redirect()
+             ->route('lots.mine')
+             ->with('info', 'Your lot was submitted for review');
+     }
+
+     public function approve(Request $request, Lot $lot)
+     {
+         abort_unless(Gate::allows('admin'), 403);
+
+         if ($lot->status !== 'confirmed') {
+-            $lot->update(['status' => 'confirmed']);
++            $lot->update(['status' => 'confirmed', 'rejection_reason' => null]);
+
+             $lot->user?->notify(new LotApprovedNotification($lot));
+         }
+
+         if ($request->wantsJson()) {
+             return response()->json(['status' => 'ok', 'lot_status' => $lot->status]);
+         }
+
+         return redirect()
+             ->route('admin.lots.pending')
+             ->with('success', 'Lot approved.');
+     }
+
+     public function invalidate(Request $request, Lot $lot)
+     {
+         abort_unless(Gate::allows('admin'), 403);
+
+-        if ($lot->status !== 'invalid') {
+-            $lot->update(['status' => 'invalid']);
+-        }
++        $data = $request->validate([
++            'reason' => ['nullable', 'string', 'max:500'],
++        ]);
++
++        $lot->update([
++            'status'            => 'invalid',
++            'rejection_reason'  => $data['reason'] ?? null,
++        ]);
++
++        $lot->user?->notify(new LotRejectedNotification($lot, $data['reason'] ?? null));
+
+         if ($request->wantsJson()) {
+             return response()->json(['status' => 'ok', 'lot_status' => $lot->status]);
+         }
+
+         return redirect()
+             ->route('admin.lots.pending')
+             ->with('success', 'Lot marked as invalid.');
+     }
+
+     public function destroy(Lot $lot)
+     {
+         $this->abortIfNotOwner($lot);
+         $lot->delete();
+
+         return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
+     }
+
+     // ====== Private helpers ============================================================
+
+     private function attachFavFlag(Builder $query): Builder
+     {
+         // если select не задан — выберем lots.*
+         if (empty($query->getQuery()->columns)) {
+             $query->select('lots.*');
+diff --git a/app/Models/Lot.php b/app/Models/Lot.php
+index a30b60913cc22c329fe6c816eebbc6005de1128a..e847416b8cbd130b6d9b18ed708b6e6c00f47384 100644
+--- a/app/Models/Lot.php
++++ b/app/Models/Lot.php
+@@ -1,42 +1,42 @@
+ <?php
+
+ namespace App\Models;
+
+ use App\Models\Concerns\Favoritable;
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\Factories\HasFactory;
+ use Illuminate\Database\Eloquent\SoftDeletes;
+
+ class Lot extends Model
+ {
+     use HasFactory, SoftDeletes, Favoritable;
+
+     protected $fillable = [
+         'user_id','name','description','creator_id','creator_link','download_link',
+         'lot_size','content_type','furnishing','lot_type','bedrooms','bathrooms',
+-        'status',
++        'status','rejection_reason',
+     ];
+
+     protected $casts = [
+         'is_favorited' => 'boolean',
+         // НЕ кастим favorites_count, мы будем использовать alias favorites_total
+     ];
+
+     public function favoritedBy()
+     {
+         return $this->belongsToMany(User::class, 'favorites')->withTimestamps();
+     }
+
+     public function images()
+     {
+         return $this->hasMany(LotImage::class);
+     }
+
+     public function coverImage()
+     {
+         // можно оставить, не критично
+         return $this->hasOne(LotImage::class)->orderBy('position');
+     }
+
+     public function user()
+     {
+diff --git a/app/Notifications/LotRejectedNotification.php b/app/Notifications/LotRejectedNotification.php
+new file mode 100644
+index 0000000000000000000000000000000000000000..5a3c8b23dcfa19537a78ac8afbd52f90854a7572
+--- /dev/null
++++ b/app/Notifications/LotRejectedNotification.php
+@@ -0,0 +1,39 @@
++<?php
++
++namespace App\Notifications;
++
++use App\Models\Lot;
++use Illuminate\Bus\Queueable;
++use Illuminate\Notifications\Notification;
++
++class LotRejectedNotification extends Notification
++{
++    use Queueable;
++
++    public function __construct(private Lot $lot, private ?string $reason = null)
++    {
++    }
++
++    public function via(object $notifiable): array
++    {
++        return ['database'];
++    }
++
++    public function toArray(object $notifiable): array
++    {
++        $message = sprintf('Your lot "%s" was rejected.', $this->lot->name);
++
++        if ($this->reason) {
++            $message .= ' Reason: '.$this->reason;
++        }
++
++        return [
++            'type'     => 'lot_rejected',
++            'lot_id'   => $this->lot->id,
++            'lot_name' => $this->lot->name,
++            'reason'   => $this->reason,
++            'message'  => $message,
++            'url'      => route('lots.view', ['lot' => $this->lot->id]),
++        ];
++    }
++}
+diff --git a/database/migrations/2025_10_28_120000_add_rejection_reason_to_lots_table.php b/database/migrations/2025_10_28_120000_add_rejection_reason_to_lots_table.php
+new file mode 100644
+index 0000000000000000000000000000000000000000..90663c4105aa39d371959196059ada21601e5434
+--- /dev/null
++++ b/database/migrations/2025_10_28_120000_add_rejection_reason_to_lots_table.php
+@@ -0,0 +1,22 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('lots', function (Blueprint $table) {
++            $table->text('rejection_reason')->nullable()->after('status');
++        });
++    }
++
++    public function down(): void
++    {
++        Schema::table('lots', function (Blueprint $table) {
++            $table->dropColumn('rejection_reason');
++        });
++    }
++};
+diff --git a/resources/js/app.tsx b/resources/js/app.tsx
+index f8f624e43c7fc0fd80ce708db8b698ccadcf6fac..dd5985b7f4c32717f5a970136746356457d093ec 100644
+--- a/resources/js/app.tsx
++++ b/resources/js/app.tsx
+@@ -1,23 +1,28 @@
+ import React from "react";
+ import { createRoot } from "react-dom/client";
+ import { createInertiaApp } from "@inertiajs/react";
+ import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
+ import MainLayout from "@/layouts/main-layout";
++import { ThemeProvider } from "@/components/theme-provider";
+ import "../css/app.css";
+
+ createInertiaApp({
+     progress: { color: "#6366f1" },
+     resolve: async (name) => {
+         const mod: any = await resolvePageComponent(
+             `./pages/${name}.tsx`,
+             import.meta.glob("./pages/**/*.tsx")
+         );
+
+         const Page = mod.default;
+
+         return mod;
+     },
+     setup({ el, App, props }) {
+-        createRoot(el).render(<App {...props} />);
++        createRoot(el).render(
++            <ThemeProvider>
++                <App {...props} />
++            </ThemeProvider>,
++        );
+     },
+ });
+diff --git a/resources/js/components/lot-card.tsx b/resources/js/components/lot-card.tsx
+index 851ff8ebbdc7ffc9d43cc4db907d4b68cd5e5299..c2b2f7ba72e7ad6de531b702a00c1f5f87e048f3 100644
+--- a/resources/js/components/lot-card.tsx
++++ b/resources/js/components/lot-card.tsx
+@@ -13,50 +13,51 @@ import {
+ } from "lucide-react";
+ import type { Lot } from "@/types/lots";
+ import { Link } from "@inertiajs/react";
+ import { route } from "ziggy-js";
+ import { resolveSrc, AVATAR_PLACEHOLDER, IMAGE_PLACEHOLDER } from "@/lib";
+ import { FavouriteToggle } from "@/components/common/FavouriteToggle";
+ import {LotSpecRow} from "@/components/lots/spec-row";
+
+ type Props = { lot: Lot & { is_favorited?: boolean; isFavorited?: boolean } };
+
+ export function LotCard({ lot }: Props) {
+     const userName = lot.user?.name ?? "Unknown user";
+     const userAvatar =
+         lot.user?.avatar_url ?? resolveSrc(lot.user?.avatar) ?? AVATAR_PLACEHOLDER;
+
+     const lotId = (lot as any).id;
+     const lotUrl = lotId ? route("lots.view", { lot: lotId }) : "#";
+     const userUrl = lot.user?.id ? route("users.show", { user: lot.user.id }) : null;
+
+     const cover = lot.cover_image ?? (lot.images?.[0] ?? null);
+     const coverUrl = cover?.url ? (resolveSrc(cover.url) ?? IMAGE_PLACEHOLDER) : IMAGE_PLACEHOLDER;
+
+     const isCommunity = lot.lot_type === "Community";
+     const initialLiked = Boolean((lot as any).is_favorited ?? (lot as any).isFavorited);
+     const initialCount = typeof lot.favorites_count === "number" ? lot.favorites_count : 0;
++    const canShowFavourite = lot.status === "confirmed";
+
+     return (
+         <Card className="gap-2 py-4 group w-full max-w-full rounded-xl shadow-lg hover:shadow-xl transition-all overflow-hidden">
+             <CardHeader>
+                 <CardTitle className="flex items-center gap-3 overflow-hidden text-[15px] md:text-base">
+                     {userUrl ? (
+                         <Link href={userUrl} aria-label={`Open profile of ${userName}`}>
+                             <img
+                                 src={userAvatar}
+                                 alt={userName}
+                                 className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-border hover:opacity-90 transition"
+                             />
+                         </Link>
+                     ) : (
+                         <img
+                             src={userAvatar}
+                             alt={userName}
+                             className="h-10 w-10 rounded-full object-cover shrink-0 ring-1 ring-border"
+                         />
+                     )}
+
+                     <div className="min-w-0 flex flex-col">
+                         {lotId ? (
+                             <Link
+                                 href={lotUrl}
+@@ -82,62 +83,64 @@ export function LotCard({ lot }: Props) {
+                         ) : (
+                             <div className="text-xs text-muted-foreground truncate">
+                                 {userName}
+                             </div>
+                         )}
+                     </div>
+                 </CardTitle>
+             </CardHeader>
+
+             <div className="px-4 pb-2">
+                 <div className="relative w-full overflow-hidden rounded-xl aspect-[16/9]">
+                     <div className="absolute right-2 top-2 z-20 flex items-center gap-2">
+                         {lot.status && lot.status !== "confirmed" && (
+                             <span
+                                 className={[
+                                     "inline-flex items-center rounded-full px-2 py-1 text-[11px] font-medium backdrop-blur border",
+                                     lot.status === "pending"
+                                         ? "bg-amber-50/80 text-amber-700 border-amber-200"
+                                         : "bg-red-50/80 text-red-700 border-red-200",
+                                 ].join(" ")}
+                             >
+                                 {lot.status === "pending" ? "Pending" : "Rejected"}
+                             </span>
+                         )}
+
+-                        <div className="pointer-events-none">
+-                            {lotId ? (
+-                                <FavouriteToggle
+-                                    lotId={lotId}
+-                                    initialLiked={initialLiked}
+-                                    initialCount={initialCount}
+-                                    className="pointer-events-auto"
+-                                    size="md"
+-                                    showCount
+-                                />
+-                            ) : null}
+-                        </div>
++                        {canShowFavourite && (
++                            <div className="pointer-events-none">
++                                {lotId ? (
++                                    <FavouriteToggle
++                                        lotId={lotId}
++                                        initialLiked={initialLiked}
++                                        initialCount={initialCount}
++                                        className="pointer-events-auto"
++                                        size="md"
++                                        showCount
++                                    />
++                                ) : null}
++                            </div>
++                        )}
+                     </div>
+
+                     <img
+                         src={coverUrl}
+                         alt={`${lot.name} cover`}
+                         className="absolute inset-0 h-full w-full object-cover transition duration-200 ease-out group-hover:brightness-75 group-hover:blur-[1px]"
+                         loading="lazy"
+                     />
+
+                     <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 ease-out" />
+
+                     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-200 ease-out">
+                         <div className="bg-gradient-to-t from-black/55 via-black/25 to-transparent px-4 pt-10 pb-3 pointer-events-auto">
+                             <div className="flex flex-col gap-1 text-white drop-shadow">
+                                 <LotSpecRow
+                                     icon={
+                                         isCommunity ? (
+                                             <Building2 className="h-3.5 w-3.5" />
+                                         ) : (
+                                             <Home className="h-3.5 w-3.5" />
+                                         )
+                                     }
+                                     label="Type"
+                                     value={lot.lot_type}
+                                 />
+diff --git a/resources/js/components/lots/lot-show-header.tsx b/resources/js/components/lots/lot-show-header.tsx
+index 9bd04bb5ae069847932bc85d04baa4190293ab8a..241b33074b011b0778209abee492fae937c497a9 100644
+--- a/resources/js/components/lots/lot-show-header.tsx
++++ b/resources/js/components/lots/lot-show-header.tsx
+@@ -1,82 +1,136 @@
+ import React from "react";
+ import { Link } from "@inertiajs/react";
+ import { Button } from "@/components/ui/button";
+ import { Pencil } from "lucide-react";
+ import { route } from "ziggy-js";
+ import { FavouriteToggle } from "@/components/common/FavouriteToggle";
+ import { LotDownloadButton } from "@/components/lots/lot-download-button";
+ import type { Lot } from "@/types/lots";
++import {
++    Dialog,
++    DialogContent,
++    DialogDescription,
++    DialogFooter,
++    DialogHeader,
++    DialogTitle,
++    DialogTrigger,
++} from "@/components/ui/dialog";
++import { Label } from "@/components/ui/label";
++import { Textarea } from "@/components/ui/textarea";
+
+ type Props = {
+     lot: Lot;
+     isOwner: boolean;
+     canModerate: boolean;
++    isAdmin: boolean;
+     isPendingForCurrentUser: boolean;
+     onApprove: () => void;
+-    onReject: () => void;
++    onReject: (reason?: string) => void;
+     initialLiked: boolean;
+     initialCount: number;
+ };
+
+ export const LotShowHeader: React.FC<Props> = ({
+                                                    lot,
+                                                    isOwner,
+                                                    canModerate,
++                                                   isAdmin,
+                                                    isPendingForCurrentUser,
+                                                    onApprove,
+                                                    onReject,
+                                                    initialLiked,
+                                                    initialCount,
+                                                }) => {
++    const canShowFavourite = lot.status === "confirmed";
++    const [isRejectDialogOpen, setIsRejectDialogOpen] = React.useState(false);
++    const [rejectReason, setRejectReason] = React.useState<string>("");
++
++    const handleReject = () => {
++        onReject(rejectReason.trim() || undefined);
++        setRejectReason("");
++        setIsRejectDialogOpen(false);
++    };
++
+     return (
+         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+             <div className="flex flex-wrap items-center gap-3">
+                 <h1 className="text-2xl font-semibold">{lot.name}</h1>
+
+                 {isPendingForCurrentUser && (
+                     <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
+                         Awaiting approve
+                     </span>
+                 )}
+             </div>
+
+             <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+                 {canModerate && lot.status === "pending" && (
+                     <div className="flex flex-wrap gap-2">
+                         <Button onClick={onApprove}>Approve</Button>
+-                        <Button variant="destructive" onClick={onReject}>
+-                            Reject
+-                        </Button>
++                        <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
++                            <DialogTrigger asChild>
++                                <Button variant="destructive">Reject</Button>
++                            </DialogTrigger>
++                            <DialogContent className="sm:max-w-md">
++                                <DialogHeader>
++                                    <DialogTitle>Reject lot</DialogTitle>
++                                    <DialogDescription>
++                                        Optionally explain why this lot is being rejected.
++                                    </DialogDescription>
++                                </DialogHeader>
++
++                                <div className="space-y-2">
++                                    <Label htmlFor="reject-reason">Rejection reason (optional)</Label>
++                                    <Textarea
++                                        id="reject-reason"
++                                        value={rejectReason}
++                                        onChange={(event) => setRejectReason(event.target.value)}
++                                        placeholder="Example: Missing screenshots or download link is broken"
++                                    />
++                                </div>
++
++                                <DialogFooter className="gap-2 sm:gap-0">
++                                    <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
++                                        Cancel
++                                    </Button>
++                                    <Button variant="destructive" onClick={handleReject}>
++                                        Confirm rejection
++                                    </Button>
++                                </DialogFooter>
++                            </DialogContent>
++                        </Dialog>
+                     </div>
+                 )}
+
+-                <FavouriteToggle
+-                    lotId={lot.id}
+-                    initialLiked={initialLiked}
+-                    initialCount={initialCount}
+-                    size="md"
+-                    showCount
+-                />
++                {canShowFavourite && (
++                    <FavouriteToggle
++                        lotId={lot.id}
++                        initialLiked={initialLiked}
++                        initialCount={initialCount}
++                        size="md"
++                        showCount
++                    />
++                )}
+
+                 <LotDownloadButton href={lot.download_link} />
+
+                 {isOwner && (
+                     <Link href={route("lots.edit", lot.id)}>
+                         <Button
+                             variant="secondary"
+                             className="gap-2 transition-[filter,opacity] hover:opacity-90 hover:brightness-95"
+                             title="Edit this lot"
+                         >
+                             <Pencil className="h-4 w-4" />
+                             Edit
+                         </Button>
+                     </Link>
+                 )}
+
+                 <Link href={route("dashboard")}>
+                     <Button variant="outline">Back</Button>
+                 </Link>
+             </div>
+         </div>
+     );
+ };
+diff --git a/resources/js/components/theme-provider.tsx b/resources/js/components/theme-provider.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..26e7cf7ba415a9c68cbcd73b9a1298a87b2b1df2
+--- /dev/null
++++ b/resources/js/components/theme-provider.tsx
+@@ -0,0 +1,75 @@
++import React from "react";
++
++type Theme = "light" | "dark";
++
++type ThemeContextValue = {
++    theme: Theme;
++    setTheme: (value: Theme | ((prev: Theme) => Theme)) => void;
++    toggleTheme: () => void;
++};
++
++const ThemeContext = React.createContext<ThemeContextValue | null>(null);
++
++const STORAGE_KEY = "theme";
++
++function getPreferredTheme(): Theme {
++    if (typeof window === "undefined") {
++        return "light";
++    }
++
++    const stored = window.localStorage.getItem(STORAGE_KEY);
++    if (stored === "dark" || stored === "light") {
++        return stored;
++    }
++
++    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
++    return prefersDark ? "dark" : "light";
++}
++
++function applyTheme(theme: Theme) {
++    if (typeof document === "undefined") return;
++
++    const root = document.documentElement;
++    root.classList.toggle("dark", theme === "dark");
++    root.style.colorScheme = theme;
++}
++
++export function ThemeProvider({ children }: { children: React.ReactNode }) {
++    const [theme, setThemeState] = React.useState<Theme>(getPreferredTheme);
++
++    const setTheme = React.useCallback((value: Theme | ((prev: Theme) => Theme)) => {
++        setThemeState((prev) => {
++            const next = typeof value === "function" ? value(prev) : value;
++
++            if (typeof window !== "undefined") {
++                window.localStorage.setItem(STORAGE_KEY, next);
++            }
++
++            return next;
++        });
++    }, []);
++
++    const toggleTheme = React.useCallback(() => {
++        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
++    }, [setTheme]);
++
++    React.useEffect(() => {
++        applyTheme(theme);
++    }, [theme]);
++
++    const value = React.useMemo(
++        () => ({ theme, setTheme, toggleTheme }),
++        [theme, setTheme, toggleTheme]
++    );
++
++    return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
++}
++
++export function useTheme() {
++    const ctx = React.useContext(ThemeContext);
++    if (!ctx) {
++        throw new Error("useTheme must be used within ThemeProvider");
++    }
++
++    return ctx;
++}
+diff --git a/resources/js/components/ui/sidebar.tsx b/resources/js/components/ui/sidebar.tsx
+index 30638ac35fbe4e345669a5edefeb399f809bb7d0..2f95dbb5f46c1c041252e880ddcf0c08f517871d 100644
+--- a/resources/js/components/ui/sidebar.tsx
++++ b/resources/js/components/ui/sidebar.tsx
+@@ -172,50 +172,51 @@ function Sidebar({
+         className={cn(
+           "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
+           className
+         )}
+         {...props}
+       >
+         {children}
+       </div>
+     )
+   }
+
+   if (isMobile) {
+     return (
+       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+         <SheetContent
+           data-sidebar="sidebar"
+           data-slot="sidebar"
+           data-mobile="true"
+           className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+           style={
+             {
+               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+             } as React.CSSProperties
+           }
+           side={side}
++          onOpenAutoFocus={(event) => event.preventDefault()}
+         >
+           <SheetHeader className="sr-only">
+             <SheetTitle>Sidebar</SheetTitle>
+             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+           </SheetHeader>
+           <div className="flex h-full w-full flex-col">{children}</div>
+         </SheetContent>
+       </Sheet>
+     )
+   }
+
+   return (
+     <div
+       className="group peer text-sidebar-foreground hidden md:block"
+       data-state={state}
+       data-collapsible={state === "collapsed" ? collapsible : ""}
+       data-variant={variant}
+       data-side={side}
+       data-slot="sidebar"
+     >
+       {/* This is what handles the sidebar gap on desktop */}
+       <div
+         data-slot="sidebar-gap"
+         className={cn(
+           "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+diff --git a/resources/js/pages/lots/show.tsx b/resources/js/pages/lots/show.tsx
+index 3e56c53fcc397d64d2427380f89ac4eb3271674f..4a233ed55252d739d0f41485e7ce6ff8a85bb3fb 100644
+--- a/resources/js/pages/lots/show.tsx
++++ b/resources/js/pages/lots/show.tsx
+@@ -1,99 +1,125 @@
+ import React from "react";
+-import { Head, Link, router, usePage } from "@inertiajs/react";
++import { Head, router } from "@inertiajs/react";
+ import MainLayout from "@/layouts/main-layout";
+ import type { Lot } from "@/types/lots";
+ import { toast } from "sonner";
+ import { route } from "ziggy-js";
+ import { BreadcrumbItem } from "@/types";
++import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
++import { AlertCircle, ShieldX } from "lucide-react";
+
+ import { LotShowHeader } from "@/components/lots/lot-show-header";
+ import { LotImagesCard } from "@/components/lots/lot-images-card";
+ import { LotMainInfo } from "@/components/lots/lot-main-info";
+ import { LotAuthorAside } from "@/components/lots/lot-author-aside";
+ import {useIsMobile} from "@/hooks/use-mobile";
+
+ type PageProps = {
+     lot: Lot;
+     isOwner: boolean;
+     isFavorited: boolean;
+     isAdmin: boolean;
+     pendingIds: number[];
+ };
+
+ export default function LotShow(props: PageProps) {
+     const isMobile = useIsMobile();
+-    const { lot, isOwner, pendingIds } = props;
++    const { lot, isOwner, pendingIds, isAdmin } = props;
+     const breadcrumbs: BreadcrumbItem[] = [
+         { title: "Home", href: route("dashboard") },
+         { title: lot.name },
+     ];
+
+-    const { isAdmin } = (usePage().props as unknown as PageProps);
+-
+     const canModerate = isAdmin && lot.status !== "confirmed";
+
+     const isPendingForCurrentUser = Array.isArray(pendingIds)
+         ? pendingIds.includes(lot.id)
+         : false;
+
+     const approve = () => {
+         router.post(
+             route("admin.lots.approve", lot.id),
+             {},
+             {
+                 preserveScroll: true,
+                 onSuccess: () => toast.success("Lot approved"),
+                 onError: () => toast.error("Failed to approve lot"),
+             },
+         );
+     };
+
+-    const reject = () => {
++    const reject = (reason?: string) => {
+         router.post(
+             route("admin.lots.invalidate", lot.id),
+-            {},
++            { reason },
+             {
+                 preserveScroll: true,
+                 onSuccess: () => toast.success("Lot rejected"),
+                 onError: () => toast.error("Failed to reject lot"),
+             },
+         );
+     };
+
+     const images = lot.images ?? [];
+     const initialLiked = props.isFavorited;
+     const initialCount = lot.favorites_count ?? 0;
++    const showStatusAlert = lot.status !== "confirmed";
++    const isPending = lot.status === "pending";
+
+     return (
+         <MainLayout breadcrumbs={breadcrumbs}>
+             <Head title={lot.name} />
+
+             <div className="container mx-auto max-w-screen-xl px-4">
++                {showStatusAlert && (
++                    <Alert variant={isPending ? "default" : "destructive"} className="mb-4">
++                        {isPending ? (
++                            <AlertCircle className="h-4 w-4" />
++                        ) : (
++                            <ShieldX className="h-4 w-4" />
++                        )}
++                        <AlertTitle>{isPending ? "Awaiting approval" : "Lot not approved"}</AlertTitle>
++                        <AlertDescription>
++                            {isPending
++                                ? "This lot is waiting for moderation. Reactions are disabled until it is approved."
++                                : "Moderation has rejected this lot. Please review the feedback and update the lot before resubmitting."}
++
++                            {lot.rejection_reason && (
++                                <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm leading-relaxed text-destructive">
++                                    <p className="font-medium">Rejection reason</p>
++                                    <p className="whitespace-pre-wrap text-destructive/90">{lot.rejection_reason}</p>
++                                </div>
++                            )}
++                        </AlertDescription>
++                    </Alert>
++                )}
++
+                 <LotShowHeader
+                     lot={lot}
+                     isOwner={isOwner}
+                     canModerate={canModerate}
++                    isAdmin={isAdmin}
+                     isPendingForCurrentUser={isPendingForCurrentUser}
+                     onApprove={approve}
+                     onReject={reject}
+                     initialLiked={initialLiked}
+                     initialCount={initialCount}
+                 />
+
+                 <LotImagesCard
+                     lotName={lot.name}
+                     images={images}
+                     isMobile={isMobile}
+                 />
+
+                 <div className="grid gap-6 lg:grid-cols-3">
+                     <div className="space-y-6 lg:col-span-2">
+                         <LotMainInfo lot={lot} />
+                     </div>
+
+                     <LotAuthorAside user={lot.user} />
+                 </div>
+             </div>
+         </MainLayout>
+     );
+ }
+diff --git a/resources/js/pages/profile/show.tsx b/resources/js/pages/profile/show.tsx
+index a54781ddb364e0c5edfe96d6e997fc4ab6e12e90..d4d4654a88fa1fa6cf96655233619dcc65df3ace 100644
+--- a/resources/js/pages/profile/show.tsx
++++ b/resources/js/pages/profile/show.tsx
+@@ -14,50 +14,51 @@ import type { BreadcrumbItem } from "@/types";
+
+ dayjs.extend(relativeTime);
+
+ type UserDto = {
+     id: number;
+     name: string;
+     avatar_url: string;
+     about?: string | null;
+     short_about?: string | null;
+     external_url?: string | null;
+     sims_gallery_id?: string | null;
+     created_at: string;
+     last_seen_at?: string | null;
+     is_online?: boolean;
+ };
+
+ type Props = {
+     user: UserDto;
+     stats: { lots: number; favourites: number };
+     latestLots: (Lot & { favorites_count?: number; is_favorited?: boolean })[];
+     isOwner: boolean;
+     topLot: (Lot & { favorites_count?: number; is_favorited?: boolean }) | null;
+ };
+
+ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLot }: Props) {
++    const canShowFavourite = (lot: Lot) => lot.status === "confirmed";
+     const breadcrumbs: BreadcrumbItem[] = [
+         { title: "Home", href: route("dashboard") },
+         { title: "Users", href: route("users.index") },
+         { title: user.name },
+     ];
+
+     const avatar = user.avatar_url;
+     const lots = latestLots ?? [];
+     const hasLots = lots.length > 0;
+
+     const completenessParts = [
+         Boolean(user.short_about),
+         Boolean(user.about),
+         Boolean(user.external_url),
+         Boolean(user.sims_gallery_id),
+     ];
+     const completeScore = Math.round((completenessParts.filter(Boolean).length / completenessParts.length) * 100);
+
+     return (
+         <MainLayout breadcrumbs={breadcrumbs}>
+             <Head title={`${user.name} — Profile`} />
+             <div className="container mx-auto px-4">
+                 <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                     <img src={avatar} alt={user.name} className="h-24 w-24 rounded-full object-cover ring-2 ring-border" />
+                     <div className="flex-1">
+@@ -144,85 +145,88 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
+                                         : "Great work — your profile is fully completed and easier to discover."}
+                                 </div>
+                             </div>
+                         )}
+                     </CardContent>
+                 </Card>
+
+                 <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_32rem]">
+                     <div className="mt-6 rounded-xl border py-6 pl-5 pr-5">
+                         <div className="mb-3 flex items-center justify-between">
+                             <h2 className="text-lg font-semibold">Latest lots</h2>
+                         </div>
+
+                         {!hasLots ? (
+                             <Card>
+                                 <CardContent className="text-sm text-muted-foreground">
+                                     Nothing here yet.{" "}
+                                     {isOwner
+                                         ? "Create your first lot and start building your showcase"
+                                         : "This creator hasn’t published lots yet"}
+                                 </CardContent>
+                             </Card>
+                         ) : (
+                             <div className="divide-y rounded-lg border">
+                                 {lots.map((lot) => {
+-                                    const cover = (lot as any).cover_image?.url ?? lot.images?.[0]?.url ?? "/images/lot-placeholder.jpg";
+-                                    const favCount = (lot as any).favorites_count ?? 0;
++                                const cover = (lot as any).cover_image?.url ?? lot.images?.[0]?.url ?? "/images/lot-placeholder.jpg";
++                                const favCount = (lot as any).favorites_count ?? 0;
++                                const showFavourite = canShowFavourite(lot);
+
+                                     return (
+                                         <div key={lot.id} className="flex items-center gap-3 p-3">
+                                             <img
+                                                 src={cover}
+                                                 alt={lot.name}
+                                                 className="h-12 w-16 flex-none rounded object-cover ring-1 ring-border"
+                                                 loading="lazy"
+                                             />
+
+                                             <div className="min-w-0 flex-1">
+                                                 <Link
+                                                     href={route("lots.view", { lot: lot.id })}
+                                                     className="line-clamp-1 text-sm font-medium hover:underline"
+                                                     title={lot.name}
+                                                 >
+                                                     {lot.name}
+                                                 </Link>
+
+                                                 <div className="mt-0.5 text-xs text-muted-foreground">
+                                                     {lot.lot_type} • {lot.lot_size} • {dayjs(lot.created_at).fromNow()}
+                                                 </div>
+                                             </div>
+
+-                                            <div className="flex items-center gap-2">
+-                                                <FavouriteToggle
+-                                                    lotId={lot.id}
+-                                                    initialLiked={Boolean((lot as any).is_favorited)}
+-                                                    initialCount={favCount}
+-                                                    size="sm"
+-                                                    showCount
+-                                                />
+-                                            </div>
++                                            {showFavourite && (
++                                                <div className="flex items-center gap-2">
++                                                    <FavouriteToggle
++                                                        lotId={lot.id}
++                                                        initialLiked={Boolean((lot as any).is_favorited)}
++                                                        initialCount={favCount}
++                                                        size="sm"
++                                                        showCount
++                                                    />
++                                                </div>
++                                            )}
+                                         </div>
+                                     );
+                                 })}
+                             </div>
+                         )}
+                     </div>
+
+                     <Card className="mt-6 gap-0">
+                         <CardHeader className="pb-2">
+                             <CardTitle className="text-base">Top liked</CardTitle>
+                         </CardHeader>
+                         <CardContent className="p-3 pt-0">
+                             {topLot ? (
+                                 <div className="min-w-0">
+                                     <LotCard lot={topLot} />
+                                 </div>
+                             ) : (
+                                 <Card>
+                                     <CardContent className="text-sm text-muted-foreground">No lots to highlight yet</CardContent>
+                                 </Card>
+                             )}
+                         </CardContent>
+                     </Card>
+                 </div>
+             </div>
+diff --git a/resources/js/pages/settings/index.tsx b/resources/js/pages/settings/index.tsx
+index ae84b0f41e317ff2eb2ad149b51f698a6832d9c7..b36577634eb56bd934e39227d6556a0fbbde2698 100644
+--- a/resources/js/pages/settings/index.tsx
++++ b/resources/js/pages/settings/index.tsx
+@@ -1,65 +1,79 @@
+ import React from "react";
+ import { Head, Link, usePage } from "@inertiajs/react";
+ import MainLayout from "@/layouts/main-layout";
+ import { Button } from "@/components/ui/button";
+ import { route } from "ziggy-js";
+-import {BreadcrumbItem} from "@/types";
++import { Switch } from "@/components/ui/switch";
++import { Label } from "@/components/ui/label";
++import { BreadcrumbItem } from "@/types";
++import { useTheme } from "@/components/theme-provider";
+
+ const breadcrumbs: BreadcrumbItem[] = [
+     { title: "Home", href: route("dashboard") },
+     { title: "Settings" },
+ ];
+
+ export default function SettingsIndex() {
+     const { props } = usePage();
+     const user = (props as any)?.auth?.user;
++    const { theme, setTheme } = useTheme();
+
+     return (
+         <MainLayout breadcrumbs={breadcrumbs}>
+             <Head title="Settings" />
+             <div className="container mx-auto max-w-screen-sm px-4">
+                 <div className="mb-6 flex items-center justify-between">
+                     <div>
+                         <h1 className="mb-1 text-2xl font-semibold">Settings</h1>
+                         <p className="text-sm text-muted-foreground">Application preferences</p>
+                     </div>
+                     <Link href={route("dashboard")}>
+                         <Button variant="outline">Back</Button>
+                     </Link>
+                 </div>
+
+                 <div className="space-y-6">
+                     <div className="rounded-lg border p-4">
+                         <h2 className="mb-2 text-lg font-medium">Profile</h2>
+                         <p className="mb-4 text-sm text-muted-foreground">
+                             Update your personal information and change password.
+                         </p>
+                         <Link href={route("profile.edit")}>
+                             <Button>Edit profile</Button>
+                         </Link>
+                     </div>
+
+                     <div className="rounded-lg border p-4">
+                         <h2 className="mb-2 text-lg font-medium">Appearance</h2>
+-                        <p className="mb-4 text-sm text-muted-foreground">
+-                            Theme & layout preferences (coming soon).
+-                        </p>
+-                        <Button variant="secondary" disabled>
+-                            Coming soon
+-                        </Button>
++                        <div className="flex items-center justify-between gap-3">
++                            <div>
++                                <Label htmlFor="theme-toggle" className="text-base font-medium">
++                                    Dark theme
++                                </Label>
++                                <p className="text-sm text-muted-foreground">
++                                    Switch between light and dark appearance.
++                                </p>
++                            </div>
++                            <Switch
++                                id="theme-toggle"
++                                checked={theme === "dark"}
++                                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
++                                aria-label="Toggle dark mode"
++                            />
++                        </div>
+                     </div>
+
+                     <div className="rounded-lg border p-4">
+                         <h2 className="mb-2 text-lg font-medium">Account</h2>
+                         <p className="mb-4 text-sm text-muted-foreground">
+                             Sign out or delete your account.
+                         </p>
+                         <form action={route("logout")} method="post">
+                             <Button type="submit" variant="outline">Logout</Button>
+                         </form>
+                     </div>
+                 </div>
+             </div>
+         </MainLayout>
+     );
+ }
+diff --git a/resources/js/types/lots.d.ts b/resources/js/types/lots.d.ts
+index b0a8fdb2bfc93879e1565dc2307791f371416730..d3cb9f4def424076462498e33432dc8700ee02cc 100644
+--- a/resources/js/types/lots.d.ts
++++ b/resources/js/types/lots.d.ts
+@@ -9,50 +9,51 @@ export type LotStatus = typeof LOT_STATUSES[number];
+
+ export type LotImage = {
+     id: number;
+     url: string;
+     position: number;
+     is_cover?: boolean;
+ };
+
+ export type PreviewUser = { id: number; name: string; avatar?: string | null; avatar_url?: string | null };
+
+ export interface Lot {
+     id: number;
+     user_id: number;
+     name: string;
+     description: string | null;
+     creator_id: string;
+     creator_link: string | null;
+     download_link?: string | null;
+     lot_size: LotSize;
+     content_type: ContentType;
+     furnishing: Furnishing;
+     lot_type: LotType;
+     bedrooms: number | null;
+     bathrooms: number | null;
+     status: LotStatus;
++    rejection_reason?: string | null;
+     favorites_count?: number;
+     created_at: string;
+     updated_at: string;
+     user?: PreviewUser;
+     images?: LotImage[];
+     cover_image?: LotImage | null;
+     is_favorited?: boolean;
+     isFavorited?: boolean;
+ }
+
+ export type LotsFilters = {
+     lotType?: LotType;
+     sizes?: LotSize[];
+     contentTypes?: ContentType[];
+     furnishings?: Furnishing[];
+     bedroomsMin?: number | "";
+     bedroomsMax?: number | "";
+     bathroomsMin?: number | "";
+     bathroomsMax?: number | "";
+     query?: string;
+     user_id?: number;
+ };
+
+ export type Enums = {
+     lot_sizes: readonly string[];
+diff --git a/resources/views/app.blade.php b/resources/views/app.blade.php
+index 179fa259f2eacc35d0dd557f66c7081cefce749f..f0cd1ed3d9ef14ec37b58ecc6bb3a6a7bb4069e1 100644
+--- a/resources/views/app.blade.php
++++ b/resources/views/app.blade.php
+@@ -1,16 +1,31 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <title>Laravel + Inertia</title>
+     <meta name="viewport" content="width=device-width, initial-scale=1">
+     @viteReactRefresh
+     @routes
+     @vite(['resources/js/app.tsx'])
+     @inertiaHead
+     <meta name="csrf-token" content="{{ csrf_token() }}">
++    <script>
++        (() => {
++            const storageKey = "theme";
++            try {
++                const stored = localStorage.getItem(storageKey);
++                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
++                const theme = stored === "dark" || stored === "light" ? stored : prefersDark ? "dark" : "light";
++                const root = document.documentElement;
++                root.classList.toggle("dark", theme === "dark");
++                root.style.colorScheme = theme;
++            } catch (e) {
++                // ignore
++            }
++        })();
++    </script>
+ </head>
+ <body>
+ @inertia
+ </body>
+ </html>

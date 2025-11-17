@@ -6,14 +6,26 @@ import { route } from "ziggy-js";
 import { FavouriteToggle } from "@/components/common/FavouriteToggle";
 import { LotDownloadButton } from "@/components/lots/lot-download-button";
 import type { Lot } from "@/types/lots";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
     lot: Lot;
     isOwner: boolean;
     canModerate: boolean;
+    isAdmin: boolean;
     isPendingForCurrentUser: boolean;
     onApprove: () => void;
-    onReject: () => void;
+    onReject: (reason?: string) => void;
     initialLiked: boolean;
     initialCount: number;
 };
@@ -22,12 +34,23 @@ export const LotShowHeader: React.FC<Props> = ({
                                                    lot,
                                                    isOwner,
                                                    canModerate,
+                                                   isAdmin,
                                                    isPendingForCurrentUser,
                                                    onApprove,
                                                    onReject,
                                                    initialLiked,
                                                    initialCount,
                                                }) => {
+    const canShowFavourite = lot.status === "confirmed";
+    const [isRejectDialogOpen, setIsRejectDialogOpen] = React.useState(false);
+    const [rejectReason, setRejectReason] = React.useState<string>("");
+
+    const handleReject = () => {
+        onReject(rejectReason.trim() || undefined);
+        setRejectReason("");
+        setIsRejectDialogOpen(false);
+    };
+
     return (
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-3">
@@ -44,19 +67,50 @@ export const LotShowHeader: React.FC<Props> = ({
                 {canModerate && lot.status === "pending" && (
                     <div className="flex flex-wrap gap-2">
                         <Button onClick={onApprove}>Approve</Button>
-                        <Button variant="destructive" onClick={onReject}>
-                            Reject
-                        </Button>
+                        <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="destructive">Reject</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>Reject lot</DialogTitle>
+                                    <DialogDescription>
+                                        Optionally explain why this lot is being rejected.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="reject-reason">Rejection reason (optional)</Label>
+                                    <Textarea
+                                        id="reject-reason"
+                                        value={rejectReason}
+                                        onChange={(event) => setRejectReason(event.target.value)}
+                                        placeholder="Example: Missing screenshots or download link is broken"
+                                    />
+                                </div>
+
+                                <DialogFooter className="gap-2 sm:gap-0">
+                                    <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button variant="destructive" onClick={handleReject}>
+                                        Confirm rejection
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 )}
 
-                <FavouriteToggle
-                    lotId={lot.id}
-                    initialLiked={initialLiked}
-                    initialCount={initialCount}
-                    size="md"
-                    showCount
-                />
+                {canShowFavourite && (
+                    <FavouriteToggle
+                        lotId={lot.id}
+                        initialLiked={initialLiked}
+                        initialCount={initialCount}
+                        size="md"
+                        showCount
+                    />
+                )}
 
                 <LotDownloadButton href={lot.download_link} />
 
