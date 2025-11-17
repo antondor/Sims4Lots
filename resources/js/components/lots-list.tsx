@@ -48,9 +48,9 @@ export const LotsList: React.FC<Props> = ({
     return (
         <>
             {showHeader && (
-                <div className="mb-5 flex w-full items-end justify-end gap-4">
+                <div className="mb-5 flex w-full items-end justify-end gap-2 flex-wrap">
                     {(showCreateButton || showFilters) && (
-                        <div className="flex items-center gap-2 shrink-0 self-start">
+                        <div className="flex flex-wrap items-center gap-2">
                             {showCreateButton && user && (
                                 <Link href={route("lots.create")} className="inline-flex">
                                     <Button size="sm">Create lot</Button>
@@ -66,7 +66,7 @@ export const LotsList: React.FC<Props> = ({
                 <p className="text-center">No lots created yet. Be the first to create one!</p>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
                         {lots.data.map((lot) => (
                             <div key={lot.id} className="min-w-0">
                                 <LotCard lot={lot} />

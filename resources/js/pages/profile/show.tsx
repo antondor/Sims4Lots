@@ -140,7 +140,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                                 <div className="mb-1 font-medium text-foreground">Profile completeness: {completeScore}%</div>
                                 <div>
                                     {completeScore < 100
-                                        ? "Add a bio, a public link, or your Gallery ID to help others discover your work."
+                                        ? "Add a bio, a public link, or your Gallery ID to help others discover your work"
                                         : "Great work — your profile is fully completed and easier to discover."}
                                 </div>
                             </div>
@@ -208,7 +208,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                         )}
                     </div>
 
-                    <Card className="mt-6 gap-0 max-h-110">
+                    <Card className="mt-6 gap-0">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base">Top liked</CardTitle>
                         </CardHeader>

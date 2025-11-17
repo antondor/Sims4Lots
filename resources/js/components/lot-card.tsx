@@ -89,7 +89,7 @@ export function LotCard({ lot }: Props) {
             </CardHeader>
 
             <div className="px-4 pb-2">
-                <div className="relative w-full overflow-hidden rounded-xl aspect-[4/3] sm:aspect-[16/9]">
+                <div className="relative w-full overflow-hidden rounded-xl aspect-[16/9]">
                     <div className="absolute right-2 top-2 z-20 flex items-center gap-2">
                         {lot.status && lot.status !== "confirmed" && (
                             <span
@@ -193,6 +193,74 @@ export function LotCard({ lot }: Props) {
                                 )}
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div className="mt-3 md:hidden">
+                    <div className="rounded-lg border bg-background/70 px-3 py-2">
+                        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div className="flex flex-col">
+                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    Type
+                                </dt>
+                                <dd className="text-sm text-foreground">{lot.lot_type}</dd>
+                            </div>
+
+                            <div className="flex flex-col">
+                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    Size
+                                </dt>
+                                <dd className="text-sm text-foreground">{lot.lot_size}</dd>
+                            </div>
+
+                            <div className="flex flex-col">
+                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    Content
+                                </dt>
+                                <dd className="text-sm text-foreground">{lot.content_type}</dd>
+                            </div>
+
+                            <div className="flex flex-col">
+                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    Furnishing
+                                </dt>
+                                <dd className="text-sm text-foreground">{lot.furnishing}</dd>
+                            </div>
+
+                            {!isCommunity && (
+                                <>
+                                    <div className="flex flex-col">
+                                        <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                            Bedrooms
+                                        </dt>
+                                        <dd className="text-sm text-foreground">{lot.bedrooms ?? 0}</dd>
+                                    </div>
+
+                                    <div className="flex flex-col">
+                                        <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                            Bathrooms
+                                        </dt>
+                                        <dd className="text-sm text-foreground">{lot.bathrooms ?? 0}</dd>
+                                    </div>
+                                </>
+                            )}
+                        </dl>
+                    </div>
+
+                    <div className="mt-2">
+                        {lotId ? (
+                            <Button asChild variant="outline" className="w-full">
+                                <Link href={lotUrl}>
+                                    View lot
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button variant="outline" className="w-full" disabled>
+                                View lot
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

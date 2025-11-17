@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { route } from "ziggy-js";
-import {IMAGE_PLACEHOLDER} from "@/lib";
-import {BreadcrumbItem} from "@/types";
+import { IMAGE_PLACEHOLDER } from "@/lib";
+import { BreadcrumbItem } from "@/types";
 
 export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> }) {
     const breadcrumbs: BreadcrumbItem[] = [
@@ -32,23 +32,23 @@ export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> })
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {lots.data.map((lot) => (
                             <Card key={lot.id} className="overflow-hidden">
-                                <CardContent className="p-3 space-y-3">
+                                <CardContent className="space-y-3 p-3">
                                     <Link
                                         href={route("lots.view", { lot: lot.id })}
-                                        className="block group"
+                                        className="group block"
                                         aria-label={`Open ${lot.name}`}
                                     >
                                         <div className="aspect-[16/9] overflow-hidden rounded-lg border bg-muted">
                                             <img
                                                 src={lot.cover_image?.url ?? IMAGE_PLACEHOLDER}
-                                                className="w-full h-full object-cover transition group-hover:scale-[1.02]"
+                                                className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                                                 loading="lazy"
                                                 alt={lot.name}
                                             />
                                         </div>
                                     </Link>
 
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="min-w-0">
                                             <Link
                                                 href={route("lots.view", { lot: lot.id })}
@@ -61,9 +61,11 @@ export default function AdminLotsPending({ lots }: { lots: PaginatedData<Lot> })
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
                                             <Link href={route("lots.view", { lot: lot.id })}>
-                                                <Button size="sm" variant="outline">Open</Button>
+                                                <Button size="sm" variant="outline">
+                                                    Open
+                                                </Button>
                                             </Link>
                                             <Button size="sm" variant="secondary" onClick={() => approve(lot.id)}>
                                                 Approve
