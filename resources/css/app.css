@@ -129,3 +129,14 @@
     @apply bg-background text-foreground;
     }
 }
+
+@layer components {
+    .notification-dismiss {
+        @apply transition-all duration-200 ease-in-out;
+    }
+
+    .notification-dismiss--leaving {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+}

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { route } from "ziggy-js";
 import { toast } from "sonner";
 import type { BreadcrumbItem } from "@/types";
+import { BackButton } from "@/components/back-button";
 
 export default function ProfileEdit() {
     const { props } = usePage();
@@ -87,9 +88,7 @@ export default function ProfileEdit() {
                         <h1 className="mb-1 text-2xl font-semibold">Profile</h1>
                         <p className="text-sm text-muted-foreground">Update your account information</p>
                     </div>
-                    <Link href={route("profile.show")}>
-                        <Button variant="outline">Back</Button>
-                    </Link>
+                    <BackButton />
                 </div>
 
                 <form onSubmit={submit} className="space-y-8">

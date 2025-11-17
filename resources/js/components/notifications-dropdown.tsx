@@ -41,22 +41,45 @@ export function NotificationsDropdown() {
 
     const [items, setItems] = React.useState<NotificationItem[]>(notifications?.items ?? []);
     const [unreadCount, setUnreadCount] = React.useState<number>(notifications?.unread_count ?? 0);
+    const [closingIds, setClosingIds] = React.useState<Set<string>>(new Set());
 
     React.useEffect(() => {
         setItems(notifications?.items ?? []);
         setUnreadCount(notifications?.unread_count ?? 0);
+        setClosingIds(new Set());
     }, [notifications?.items, notifications?.unread_count]);
 
     if (!props.auth?.user) {
         return null;
     }
 
+    const animateRemoval = (ids: string[]) => {
+        if (ids.length === 0) return;
+
+        setClosingIds((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.add(id));
+            return next;
+        });
+
+        const idsSet = new Set(ids);
+
+        setTimeout(() => {
+            setItems((prev) => prev.filter((item) => !idsSet.has(item.id)));
+            setClosingIds((prev) => {
+                const next = new Set(prev);
+                ids.forEach((id) => next.delete(id));
+                return next;
+            });
+        }, 200);
+    };
+
     const markAllAsRead = async () => {
-        if (!unreadCount) return;
+        if (!items.length) return;
 
         await postJson(route("notifications.read-all"));
-        setItems((prev) => prev.map((item) => ({ ...item, read_at: item.read_at ?? new Date().toISOString() })));
         setUnreadCount(0);
+        animateRemoval(items.map((item) => item.id));
     };
 
     const handleItemSelect = async (event: Event, item: NotificationItem) => {
@@ -71,6 +94,8 @@ export function NotificationsDropdown() {
             );
             setUnreadCount((count) => Math.max(0, count - 1));
         }
+
+        animateRemoval([item.id]);
 
         if (item.url) {
             window.location.href = item.url;
@@ -107,7 +132,10 @@ export function NotificationsDropdown() {
                     items.map((item) => (
                         <DropdownMenuItem
                             key={item.id}
-                            className="flex cursor-pointer flex-col items-start gap-1 whitespace-normal py-3"
+                            className={cn(
+                                "notification-dismiss flex cursor-pointer flex-col items-start gap-1 whitespace-normal py-3",
+                                closingIds.has(item.id) && "notification-dismiss--leaving"
+                            )}
                             onSelect={(event) => handleItemSelect(event, item)}
                         >
                             <span className={cn("text-sm", !item.read_at && "font-semibold text-foreground")}>

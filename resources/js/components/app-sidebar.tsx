@@ -23,6 +23,7 @@ import { NavFooter } from "@/components/nav-footer";
 import { SidebarSearch } from "@/components/sidebar-search";
 import { usePage } from "@inertiajs/react";
 import { route } from "ziggy-js";
+import { Badge } from "@/components/ui/badge";
 
 type NavItem = {
     title: string;
@@ -33,6 +34,7 @@ type NavItem = {
 export function AppSidebar() {
     const { props } = usePage();
     const user = (props as any)?.auth?.user;
+    const adminPendingCount = (props as any)?.admin?.pending_lots_count ?? 0;
     const isAuthenticated = !!user;
     const isAdmin = !!user?.is_admin;
 
@@ -90,9 +92,14 @@ export function AppSidebar() {
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <SidebarMenuButton asChild>
-                                        <a href="/admin/lots/pending">
+                                        <a href={route("admin.lots.pending")} className="flex items-center gap-2">
                                             <ShieldCheck />
-                                            <span>Pending Lots</span>
+                                            <span className="flex-1">Pending Lots</span>
+                                            {adminPendingCount > 0 && (
+                                                <Badge variant="secondary" className="ml-auto h-6 min-w-[32px] justify-center">
+                                                    {adminPendingCount > 99 ? "99+" : adminPendingCount}
+                                                </Badge>
+                                            )}
                                         </a>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

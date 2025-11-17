@@ -8,6 +8,7 @@ import { SelectField } from "@/components/upload-form/select-field";
 import { PageHeader } from "@/components/upload-form/page-header";
 import { ImageUpload } from "@/components/upload-form/image-upload";
 import {BreadcrumbItem} from "@/types";
+import { BackButton } from "@/components/back-button";
 
 type Enums = {
     lot_sizes: string[];
@@ -92,9 +93,7 @@ export default function CreateLot({ enums }: { enums: Enums }) {
                     title="Create new lot"
                     subtitle="Fill the form to publish your Sims 4 lot"
                     right={
-                        <Link href={route("dashboard")}>
-                            <Button variant="outline">Back</Button>
-                        </Link>
+                        <BackButton />
                     }
                 />
 

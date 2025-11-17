@@ -33,6 +33,10 @@ export interface SharedData {
     auth: Auth;
     sidebarOpen: boolean;
     notifications?: NotificationsState | null;
+    navigation?: {
+        intended_url?: string | null;
+        previous_url?: string | null;
+    };
     [key: string]: unknown;
 }
 

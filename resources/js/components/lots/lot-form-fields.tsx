@@ -116,7 +116,6 @@ export function LotFormFields({ data, setData, enums, errors }: Props) {
                     value={data.lot_type}
                     onValueChange={(v) => {
                         setData("lot_type", v as any);
-                        // мгновенно чистим и блокируем поля при выборе Community
                         if (v === "Community") {
                             setData("bedrooms", "" as any);
                             setData("bathrooms", "" as any);

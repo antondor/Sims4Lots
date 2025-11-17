@@ -12,7 +12,6 @@ import { LotShowHeader } from "@/components/lots/lot-show-header";
 import { LotImagesCard } from "@/components/lots/lot-images-card";
 import { LotMainInfo } from "@/components/lots/lot-main-info";
 import { LotAuthorAside } from "@/components/lots/lot-author-aside";
-import {useIsMobile} from "@/hooks/use-mobile";
 
 type PageProps = {
     lot: Lot;
@@ -23,7 +22,6 @@ type PageProps = {
 };
 
 export default function LotShow(props: PageProps) {
-    const isMobile = useIsMobile();
     const { lot, isOwner, pendingIds, isAdmin } = props;
     const breadcrumbs: BreadcrumbItem[] = [
         { title: "Home", href: route("dashboard") },
@@ -109,7 +107,6 @@ export default function LotShow(props: PageProps) {
                 <LotImagesCard
                     lotName={lot.name}
                     images={images}
-                    isMobile={isMobile}
                 />
 
                 <div className="grid gap-6 lg:grid-cols-3">

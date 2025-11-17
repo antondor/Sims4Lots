@@ -12,7 +12,7 @@ class NotificationController extends Controller
         $user = $request->user();
         abort_unless($user, 403);
 
-        $user->unreadNotifications->markAsRead();
+        $user->notifications()->delete();
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'ok']);
@@ -32,9 +32,7 @@ class NotificationController extends Controller
             403
         );
 
-        if (is_null($notification->read_at)) {
-            $notification->markAsRead();
-        }
+        $notification->delete();
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'ok']);

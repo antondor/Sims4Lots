@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { BreadcrumbItem } from "@/types";
 import { useTheme } from "@/components/theme-provider";
+import { BackButton } from "@/components/back-button";
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: "Home", href: route("dashboard") },
@@ -27,9 +28,7 @@ export default function SettingsIndex() {
                         <h1 className="mb-1 text-2xl font-semibold">Settings</h1>
                         <p className="text-sm text-muted-foreground">Application preferences</p>
                     </div>
-                    <Link href={route("dashboard")}>
-                        <Button variant="outline">Back</Button>
-                    </Link>
+                    <BackButton />
                 </div>
 
                 <div className="space-y-6">

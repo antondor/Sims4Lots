@@ -2,15 +2,16 @@ import React, { useState } from "react";
 import MainLayout from "@/layouts/main-layout";
 import { Head, Link, router, usePage, useForm } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type { Enums, FormType, Lot } from "@/types/lots";
 import { route } from "ziggy-js";
 import { LotFormFields } from "@/components/lots/lot-form-fields";
 import { ImagesUploader } from "@/components/lots/image-uploader";
 import { ExistingImagesGrid } from "@/components/lots/existing-images-grid";
 import { FormActions } from "@/components/lots/form-actions";
-import {DeleteLotButton} from "@/components/lots/delete-lot-button";
-import {BreadcrumbItem} from "@/types";
+import { DeleteLotButton } from "@/components/lots/delete-lot-button";
+import { BreadcrumbItem } from "@/types";
+import { BackButton } from "@/components/back-button";
 
 export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
     const breadcrumbs: BreadcrumbItem[] = [
@@ -97,12 +98,7 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
 
             <div className="container mx-auto max-w-screen-md px-4">
                 <div className="flex items-center gap-3 mb-3">
-                    <Link href={route("lots.view", { lot: lot.id })}>
-                        <Button variant="ghost" className="gap-2">
-                            <ArrowLeft className="h-4 w-4" />
-                            Back
-                        </Button>
-                    </Link>
+                    <BackButton />
                     <h1 className="text-xl font-semibold">Edit {lot.name}</h1>
                     <span />
                 </div>
