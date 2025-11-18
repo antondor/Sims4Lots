@@ -158,7 +158,7 @@ class LotController extends Controller
     {
         $this->abortIfNotOwner($lot);
 
-        $data = $request->validate($this->rules(true));
+        $data = $request->validate($this->rules());
         $lot->update($data);
 
         if ($request->hasFile('images')) {
@@ -332,9 +332,9 @@ class LotController extends Controller
         ];
     }
 
-    private function rules(bool $withImages = false): array
+    private function rules(): array
     {
-        $rules = [
+        return [
             'name'          => ['required','string','max:255'],
             'description'   => ['nullable','string','max:1000'],
             'creator_id'    => ['nullable','string','max:255'],
@@ -346,15 +346,8 @@ class LotController extends Controller
             'lot_type'      => ['required','in:'.implode(',', self::LOT_TYPES)],
             'bedrooms'      => ['nullable','integer','min:0','max:50'],
             'bathrooms'     => ['nullable','integer','min:0','max:50'],
+            'images'        => ['required','array','min:1','max:10'],
         ];
-
-        if ($withImages) {
-            $rules['images']   = ['nullable','array','max:10'];
-            // мягкая валидация чтобы "ничего не сломать" — не добавляю строгие mimes
-            $rules['images.*'] = ['file','max:8192'];
-        }
-
-        return $rules;
     }
 
     private function readRange(Request $request, string $base): array

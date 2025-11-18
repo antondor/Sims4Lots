@@ -79,8 +79,8 @@ export default function LotShow(props: PageProps) {
                         <AlertTitle>{isPending ? "Awaiting approval" : "Lot not approved"}</AlertTitle>
                         <AlertDescription>
                             {isPending
-                                ? "This lot is waiting for moderation. Reactions are disabled until it is approved."
-                                : "Unfortunately, moderation has rejected this lot"}
+                                ? "This lot is waiting for moderation"
+                                : "Unfortunately, the moderation has rejected this lot"}
 
                             {lot.rejection_reason && (
                                 <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm leading-relaxed text-destructive">

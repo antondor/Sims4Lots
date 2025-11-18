@@ -6,8 +6,11 @@ import {
     DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { route } from "ziggy-js";
+import {useIsMobile} from "@/hooks/use-mobile";
 
 export function NavFooter() {
+
+    const isMobile = useIsMobile()
     const { props } = usePage();
     const user = (props as any)?.auth?.user;
     const [open, setOpen] = React.useState(false);
@@ -52,7 +55,7 @@ export function NavFooter() {
                     </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent side="top" align="end" className="w-56" sideOffset={8} alignOffset={-5}>
+                <DropdownMenuContent side="top" align="end" className="w-56" sideOffset={8} alignOffset={isMobile ? 12 : -5}>
                     <DropdownMenuLabel className="text-xs text-muted-foreground">Account</DropdownMenuLabel>
 
                     <DropdownMenuItem asChild>

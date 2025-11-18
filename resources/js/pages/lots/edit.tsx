@@ -97,10 +97,9 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
             <Head title={`Edit: ${lot.name}`} />
 
             <div className="container mx-auto max-w-screen-md px-4">
-                <div className="flex items-center gap-3 mb-3">
-                    <BackButton />
+                <div className="flex justify-between items-center gap-3 mb-3">
                     <h1 className="text-xl font-semibold">Edit {lot.name}</h1>
-                    <span />
+                    <BackButton />
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
