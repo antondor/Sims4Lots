@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import MainLayout from "@/layouts/main-layout";
 import { Head, Link, router, usePage, useForm } from "@inertiajs/react";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 import type { Enums, FormType, Lot } from "@/types/lots";
 import { route } from "ziggy-js";
 import { LotFormFields } from "@/components/lots/lot-form-fields";

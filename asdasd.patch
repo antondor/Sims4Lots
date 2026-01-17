@@ -1,909 +1,160 @@
-diff --git a/app/Http/Controllers/NotificationController.php b/app/Http/Controllers/NotificationController.php
-index 53e2fd3f2e80505a588688840283ccb4016268c2..73518354b5c2943dcf272cff7b064186fce71a64 100644
---- a/app/Http/Controllers/NotificationController.php
-+++ b/app/Http/Controllers/NotificationController.php
-@@ -1,45 +1,43 @@
- <?php
-
- namespace App\Http\Controllers;
-
- use Illuminate\Http\Request;
- use Illuminate\Notifications\DatabaseNotification;
-
- class NotificationController extends Controller
- {
-     public function markAllAsRead(Request $request)
-     {
-         $user = $request->user();
-         abort_unless($user, 403);
-
--        $user->unreadNotifications->markAsRead();
-+        $user->notifications()->delete();
-
-         if ($request->wantsJson()) {
-             return response()->json(['status' => 'ok']);
+diff --git a/app/Http/Controllers/LotController.php b/app/Http/Controllers/LotController.php
+index 710ee017ee8335ea510cae0a7df94a07c6635fac..6b7c4f2c2e0b4670c62bef54c668c47d409fc53e 100644
+--- a/app/Http/Controllers/LotController.php
++++ b/app/Http/Controllers/LotController.php
+@@ -314,51 +314,51 @@ private function attachFavFlag(Builder $query): Builder
          }
 
-         return back();
+         return $query->addSelect(DB::raw(
+             'EXISTS (
+                 SELECT 1 FROM favorites
+                 WHERE favorites.lot_id = lots.id
+                   AND favorites.user_id = ' . (int)$uid . '
+             ) AS is_favorited'
+         ));
      }
 
-     public function markAsRead(Request $request, DatabaseNotification $notification)
+     private function enums(): array
      {
-         $user = $request->user();
-
-         abort_unless(
-             $user &&
-             $notification->notifiable_id === $user->getKey() &&
-             $notification->notifiable_type === get_class($user),
-             403
-         );
-
--        if (is_null($notification->read_at)) {
--            $notification->markAsRead();
--        }
-+        $notification->delete();
-
-         if ($request->wantsJson()) {
-             return response()->json(['status' => 'ok']);
-         }
-
-         return back();
-     }
- }
-diff --git a/app/Http/Middleware/HandleInertiaRequests.php b/app/Http/Middleware/HandleInertiaRequests.php
-index 20ea5623aba1035d866959ac938e4e19251d4b6b..af820cef3bda340762e6d7edbf3882a572933322 100644
---- a/app/Http/Middleware/HandleInertiaRequests.php
-+++ b/app/Http/Middleware/HandleInertiaRequests.php
-@@ -1,61 +1,69 @@
- <?php
-
- namespace App\Http\Middleware;
-
-+use App\Models\Lot;
- use Illuminate\Http\Request;
- use Inertia\Middleware;
-
- class HandleInertiaRequests extends Middleware
- {
-     protected $rootView = 'app';
-
-     public function version(Request $request): ?string
-     {
-         return parent::version($request);
-     }
-
-     public function share(Request $request): array
-     {
-         $user = $request->user();
-
-         return array_merge(parent::share($request), [
-             'auth' => [
-                 'user' => $user ? [
-                     'id'         => $user->getKey(),
-                     'name'       => $user->name,
-                     'email'      => $user->email,
-                     'avatar'     => $user->avatar,
-                     'avatar_url' => $user->avatar_url,
-                     'is_admin'   => (bool) $user->is_admin,
-                 ] : null,
-             ],
-+            'navigation' => [
-+                'intended_url' => $request->session()->get('url.intended'),
-+                'previous_url' => url()->previous(),
-+            ],
-             'flash' => [
-                 'success' => fn () => $request->session()->get('success'),
-                 'error'   => fn () => $request->session()->get('error'),
-                 'warning' => fn () => $request->session()->get('warning'),
-                 'info'    => fn () => $request->session()->get('info'),
-             ],
-+            'admin' => $user && $user->is_admin ? [
-+                'pending_lots_count' => Lot::pending()->count(),
-+            ] : null,
-             'notifications' => $user ? fn () => [
-                 'unread_count' => $user->unreadNotifications()->count(),
-                 'items'        => $user->notifications()
-                     ->latest()
-                     ->limit(10)
-                     ->get()
-                     ->map(function ($notification) {
-                         $data = $notification->data ?? [];
-
-                         return [
-                             'id'         => $notification->id,
-                             'type'       => $data['type'] ?? $notification->type,
-                             'message'    => $data['message'] ?? '',
-                             'url'        => $data['url'] ?? null,
-                             'created_at' => $notification->created_at,
-                             'read_at'    => $notification->read_at,
-                         ];
-                     })
-                     ->values()
-                     ->all(),
-             ] : null,
-         ]);
-     }
- }
-diff --git a/resources/css/app.css b/resources/css/app.css
-index cc1a7b887799727ed8b65d6582e69199732bf446..d4f83b829f4f17caef27c7b5c934b7a53911f7aa 100644
---- a/resources/css/app.css
-+++ b/resources/css/app.css
-@@ -107,25 +107,36 @@ .dark {
-     --input: oklch(1 0 0 / 15%);
-     --ring: oklch(0.551 0.027 264.364);
-     --chart-1: oklch(0.488 0.243 264.376);
-     --chart-2: oklch(0.696 0.17 162.48);
-     --chart-3: oklch(0.769 0.188 70.08);
-     --chart-4: oklch(0.627 0.265 303.9);
-     --chart-5: oklch(0.645 0.246 16.439);
-     --sidebar: oklch(0.21 0.034 264.665);
-     --sidebar-foreground: oklch(0.985 0.002 247.839);
-     --sidebar-primary: oklch(0.488 0.243 264.376);
-     --sidebar-primary-foreground: oklch(0.985 0.002 247.839);
-     --sidebar-accent: oklch(0.278 0.033 256.848);
-     --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
-     --sidebar-border: oklch(1 0 0 / 10%);
-     --sidebar-ring: oklch(0.551 0.027 264.364);
- }
-
- @layer base {
-   * {
-     @apply border-border outline-ring/50;
-     }
-   body {
-     @apply bg-background text-foreground;
-     }
- }
-+
-+@layer components {
-+    .notification-dismiss {
-+        @apply transition-all duration-200 ease-in-out;
-+    }
-+
-+    .notification-dismiss--leaving {
-+        opacity: 0;
-+        transform: translateY(4px);
-+    }
-+}
-diff --git a/resources/js/components/app-sidebar.tsx b/resources/js/components/app-sidebar.tsx
-index 5af3e6e07a31e402346ce686dc63ebb536137fea..aea0082ece37ec24077ff95d8ecf7740a42a0d7d 100644
---- a/resources/js/components/app-sidebar.tsx
-+++ b/resources/js/components/app-sidebar.tsx
-@@ -1,60 +1,62 @@
- import * as React from "react";
- import {
-     Folder,
-     HeartIcon,
-     Home,
-     Settings,
-     ShieldCheck,
-     User,
-     UserSearch,
- } from "lucide-react";
- import {
-     Sidebar,
-     SidebarContent,
-     SidebarGroup,
-     SidebarGroupContent,
-     SidebarGroupLabel,
-     SidebarMenu,
-     SidebarMenuButton,
-     SidebarMenuItem,
-     SidebarFooter,
- } from "@/components/ui/sidebar";
- import { NavFooter } from "@/components/nav-footer";
- import { SidebarSearch } from "@/components/sidebar-search";
- import { usePage } from "@inertiajs/react";
- import { route } from "ziggy-js";
-+import { Badge } from "@/components/ui/badge";
-
- type NavItem = {
-     title: string;
-     url: string;
-     icon: React.ComponentType<any>;
- };
-
- export function AppSidebar() {
-     const { props } = usePage();
-     const user = (props as any)?.auth?.user;
-+    const adminPendingCount = (props as any)?.admin?.pending_lots_count ?? 0;
-     const isAuthenticated = !!user;
-     const isAdmin = !!user?.is_admin;
-
-     const items: NavItem[] = React.useMemo(() => {
-         const base: NavItem[] = [
-             { title: "Dashboard", url: route("dashboard"), icon: Home },
-             { title: "Search Users", url: route("users.index"), icon: UserSearch },
-         ];
-
-         if (!isAuthenticated) {
-             return base;
-         }
-
          return [
-             ...base,
-             { title: "My Profile", url: route("profile.show"), icon: User },
-             { title: "My Lots", url: route("lots.mine"), icon: Folder },
-             {
-                 title: "Favourites",
-                 url: route("favourites.index", { user: user.id }), // /favourites/{user}
-                 icon: HeartIcon,
-             },
-             { title: "Settings", url: route("settings"), icon: Settings },
+             'lot_sizes'     => self::LOT_SIZES,
+             'content_types' => self::CONTENT_TYPES,
+             'furnishings'   => self::FURNISHINGS,
+             'lot_types'     => self::LOT_TYPES,
          ];
-     }, [isAuthenticated, user?.id]);
-@@ -68,49 +70,54 @@ export function AppSidebar() {
-                         <div className="mb-3">
-                             <SidebarSearch />
-                         </div>
-                         <SidebarMenu>
-                             {items.map((item) => (
-                                 <SidebarMenuItem key={item.title}>
-                                     <SidebarMenuButton asChild>
-                                         <a href={item.url}>
-                                             <item.icon />
-                                             <span>{item.title}</span>
-                                         </a>
-                                     </SidebarMenuButton>
-                                 </SidebarMenuItem>
-                             ))}
-                         </SidebarMenu>
-                     </SidebarGroupContent>
-                 </SidebarGroup>
-
-                 {isAdmin && (
-                     <SidebarGroup>
-                         <SidebarGroupLabel>Admin</SidebarGroupLabel>
-                         <SidebarGroupContent>
-                             <SidebarMenu>
-                                 <SidebarMenuItem>
-                                     <SidebarMenuButton asChild>
--                                        <a href="/admin/lots/pending">
-+                                        <a href={route("admin.lots.pending")} className="flex items-center gap-2">
-                                             <ShieldCheck />
--                                            <span>Pending Lots</span>
-+                                            <span className="flex-1">Pending Lots</span>
-+                                            {adminPendingCount > 0 && (
-+                                                <Badge variant="secondary" className="ml-auto h-6 min-w-[32px] justify-center">
-+                                                    {adminPendingCount > 99 ? "99+" : adminPendingCount}
-+                                                </Badge>
-+                                            )}
-                                         </a>
-                                     </SidebarMenuButton>
-                                 </SidebarMenuItem>
-                             </SidebarMenu>
-                         </SidebarGroupContent>
-                     </SidebarGroup>
-                 )}
-             </SidebarContent>
-
-             {SidebarFooter ? (
-                 <SidebarFooter>
-                     <NavFooter />
-                 </SidebarFooter>
-             ) : (
-                 <div className="mt-auto border-t">
-                     <NavFooter />
-                 </div>
-             )}
-         </Sidebar>
-     );
- }
-diff --git a/resources/js/components/back-button.tsx b/resources/js/components/back-button.tsx
-new file mode 100644
-index 0000000000000000000000000000000000000000..9e4a3cc21b7b55e48fb8ee8604749b7a224c7d39
---- /dev/null
-+++ b/resources/js/components/back-button.tsx
-@@ -0,0 +1,50 @@
-+import React from "react";
-+import { usePage } from "@inertiajs/react";
-+import { Button } from "@/components/ui/button";
-+import { route } from "ziggy-js";
-+import { cn } from "@/lib/utils";
-+
-+type PageProps = {
-+    navigation?: {
-+        intended_url?: string | null;
-+        previous_url?: string | null;
-+    };
-+};
-+
-+type BackButtonProps = {
-+    className?: string;
-+    fallbackHref?: string;
-+    children?: React.ReactNode;
-+};
-+
-+export function BackButton({
-+    className,
-+    fallbackHref = route("dashboard"),
-+    children = "Back",
-+}: BackButtonProps) {
-+    const { props } = usePage<PageProps>();
-+
-+    const resolvedHref = React.useMemo(() => {
-+        const currentUrl = typeof window !== "undefined" ? window.location.href : null;
-+        const candidates = [props.navigation?.intended_url, props.navigation?.previous_url, fallbackHref];
-+
-+        return (
-+            candidates.find((href) => href && href !== currentUrl) ?? fallbackHref
-+        );
-+    }, [props.navigation?.intended_url, props.navigation?.previous_url, fallbackHref]);
-+
-+    const handleClick = React.useCallback(() => {
-+        window.location.href = resolvedHref;
-+    }, [resolvedHref]);
-+
-+    return (
-+        <Button
-+            type="button"
-+            variant="outline"
-+            className={cn("gap-2", className)}
-+            onClick={handleClick}
-+        >
-+            {children}
-+        </Button>
-+    );
-+}
-diff --git a/resources/js/components/notifications-dropdown.tsx b/resources/js/components/notifications-dropdown.tsx
-index 12c3e35f489294afb9ece488c97cb3b29e2d8355..53063d39af6cd170a1b314f838aa6f9d11d07198 100644
---- a/resources/js/components/notifications-dropdown.tsx
-+++ b/resources/js/components/notifications-dropdown.tsx
-@@ -19,105 +19,133 @@ import type { NotificationItem, NotificationsState } from "@/types";
-
- dayjs.extend(relativeTime);
-
- const csrfToken = (
-     document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null
- )?.content ?? "";
-
- async function postJson(url: string): Promise<void> {
-     await fetch(url, {
-         method: "POST",
-         headers: {
-             Accept: "application/json",
-             "X-CSRF-TOKEN": csrfToken,
-         },
-     });
- }
-
- type PageProps = { notifications?: NotificationsState | null; auth: { user: unknown | null } };
-
- export function NotificationsDropdown() {
-     const { props } = usePage<PageProps>();
-     const notifications = props.notifications ?? null;
-
-     const [items, setItems] = React.useState<NotificationItem[]>(notifications?.items ?? []);
-     const [unreadCount, setUnreadCount] = React.useState<number>(notifications?.unread_count ?? 0);
-+    const [closingIds, setClosingIds] = React.useState<Set<string>>(new Set());
-
-     React.useEffect(() => {
-         setItems(notifications?.items ?? []);
-         setUnreadCount(notifications?.unread_count ?? 0);
-+        setClosingIds(new Set());
-     }, [notifications?.items, notifications?.unread_count]);
-
-     if (!props.auth?.user) {
-         return null;
      }
 
-+    const animateRemoval = (ids: string[]) => {
-+        if (ids.length === 0) return;
+     private function rules(): array
+     {
+         return [
+             'name'          => ['required','string','max:255'],
+-            'description'   => ['nullable','string','max:1000'],
++            'description'   => ['nullable','string','max:65535'],
+             'creator_id'    => ['nullable','string','max:255'],
+             'creator_link'  => ['nullable','url','max:255'],
+             'download_link' => ['nullable','url','max:255'],
+             'lot_size'      => ['required','in:'.implode(',', self::LOT_SIZES)],
+             'content_type'  => ['required','in:'.implode(',', self::CONTENT_TYPES)],
+             'furnishing'    => ['required','in:'.implode(',', self::FURNISHINGS)],
+             'lot_type'      => ['required','in:'.implode(',', self::LOT_TYPES)],
+             'bedrooms'      => ['nullable','integer','min:0','max:50'],
+             'bathrooms'     => ['nullable','integer','min:0','max:50'],
+             'images'        => ['required','array','min:1','max:10'],
+         ];
+     }
+
+     private function readRange(Request $request, string $base): array
+     {
+         $min = $request->filled("{$base}Min") ? (int)$request->input("{$base}Min") : null;
+         $max = $request->filled("{$base}Max") ? (int)$request->input("{$base}Max") : null;
+         return [$min, $max];
+     }
+
+     private function applyNumericRange(Builder $q, string $column, ?int $min, ?int $max): void
+     {
+         if (!is_null($min) && !is_null($max)) {
+             $q->whereBetween($column, [$min, $max]);
+         } elseif (!is_null($min)) {
+diff --git a/app/Http/Requests/LotStoreRequest.php b/app/Http/Requests/LotStoreRequest.php
+index 0e9cc02448bad00476636f92b83f9d6aaecc3792..392db1f2c558abb21aacf14b55e6a00520283e8d 100644
+--- a/app/Http/Requests/LotStoreRequest.php
++++ b/app/Http/Requests/LotStoreRequest.php
+@@ -1,31 +1,31 @@
+ <?php
+
+ namespace App\Http\Requests;
+
+ use Illuminate\Foundation\Http\FormRequest;
+
+ class LotStoreRequest extends FormRequest
+ {
+     public function authorize(): bool
+     {
+         return $this->user() !== null;
+     }
+
+     public function rules(): array
+     {
+         return [
+             'name'          => ['required','string','max:255'],
+-            'description'   => ['nullable','string','max:1000'],
++            'description'   => ['nullable','string','max:65535'],
+             'creator_id'    => ['nullable','string','max:255'],
+             'creator_link'  => ['nullable','url','max:255'],
+             'download_link' => ['nullable','url','max:255'],
+             'lot_size'      => ['required','in:20x15,30x20,40x30,50x50,64x64'],
+             'content_type'  => ['required','in:CC,NoCC'],
+             'furnishing'    => ['required','in:Furnished,Unfurnished'],
+             'lot_type'      => ['required','in:Residential,Community'],
+             'bedrooms'      => ['nullable','integer','min:0','max:50'],
+             'bathrooms'     => ['nullable','integer','min:0','max:50'],
+             'images'        => ['nullable','array','max:10'],
+         ];
+     }
+ }
+diff --git a/app/Http/Requests/LotUpdateRequest.php b/app/Http/Requests/LotUpdateRequest.php
+index 0300c560fd5d04704b9f9d8105c771f4944ab330..11e162e571e80aa39186317dff29529fc58eadb0 100644
+--- a/app/Http/Requests/LotUpdateRequest.php
++++ b/app/Http/Requests/LotUpdateRequest.php
+@@ -1,31 +1,31 @@
+ <?php
+
+ namespace App\Http\Requests;
+
+ use Illuminate\Foundation\Http\FormRequest;
+
+ class LotUpdateRequest extends FormRequest
+ {
+     public function authorize(): bool
+     {
+         return $this->user() !== null;
+     }
+
+     public function rules(): array
+     {
+         return [
+             'name'          => ['required','string','max:255'],
+-            'description'   => ['nullable','string','max:1000'],
++            'description'   => ['nullable','string','max:65535'],
+             'creator_id'    => ['nullable','string','max:255'],
+             'creator_link'  => ['nullable','url','max:255'],
+             'download_link' => ['nullable','url','max:255'],
+             'lot_size'      => ['required','in:20x15,30x20,40x30,50x50,64x64'],
+             'content_type'  => ['required','in:CC,NoCC'],
+             'furnishing'    => ['required','in:Furnished,Unfurnished'],
+             'lot_type'      => ['required','in:Residential,Community'],
+             'bedrooms'      => ['nullable','integer','min:0','max:50'],
+             'bathrooms'     => ['nullable','integer','min:0','max:50'],
+             'images'        => ['nullable','array','max:10'],
+         ];
+     }
+ }
+diff --git a/database/migrations/2025_11_18_202200_update_description_column_type_on_lots_table.php b/database/migrations/2025_11_18_202200_update_description_column_type_on_lots_table.php
+new file mode 100644
+index 0000000000000000000000000000000000000000..f914e64358caadcf2e8104e294a9329effbe896c
+--- /dev/null
++++ b/database/migrations/2025_11_18_202200_update_description_column_type_on_lots_table.php
+@@ -0,0 +1,23 @@
++<?php
 +
-+        setClosingIds((prev) => {
-+            const next = new Set(prev);
-+            ids.forEach((id) => next.add(id));
-+            return next;
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('lots', function (Blueprint $table) {
++            DB::statement('ALTER TABLE lots MODIFY description TEXT NULL');
 +        });
++    }
 +
-+        const idsSet = new Set(ids);
-+
-+        setTimeout(() => {
-+            setItems((prev) => prev.filter((item) => !idsSet.has(item.id)));
-+            setClosingIds((prev) => {
-+                const next = new Set(prev);
-+                ids.forEach((id) => next.delete(id));
-+                return next;
-+            });
-+        }, 200);
-+    };
-+
-     const markAllAsRead = async () => {
--        if (!unreadCount) return;
-+        if (!items.length) return;
-
-         await postJson(route("notifications.read-all"));
--        setItems((prev) => prev.map((item) => ({ ...item, read_at: item.read_at ?? new Date().toISOString() })));
-         setUnreadCount(0);
-+        animateRemoval(items.map((item) => item.id));
-     };
-
-     const handleItemSelect = async (event: Event, item: NotificationItem) => {
-         event.preventDefault();
-
-         if (!item.read_at) {
-             await postJson(route("notifications.read", { notification: item.id }));
-             setItems((prev) =>
-                 prev.map((current) =>
-                     current.id === item.id ? { ...current, read_at: new Date().toISOString() } : current
-                 )
-             );
-             setUnreadCount((count) => Math.max(0, count - 1));
-         }
-
-+        animateRemoval([item.id]);
-+
-         if (item.url) {
-             window.location.href = item.url;
-         }
-     };
-
-     return (
-         <DropdownMenu>
-             <DropdownMenuTrigger asChild>
-                 <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-                     <Bell className="h-5 w-5" />
-                     {unreadCount > 0 && (
-                         <Badge className="absolute -right-1 -top-1 h-5 min-w-[20px] justify-center rounded-full px-1 text-[11px]">
-                             {unreadCount > 9 ? "9+" : unreadCount}
-                         </Badge>
-                     )}
-                 </Button>
-             </DropdownMenuTrigger>
-             <DropdownMenuContent align="end" className="w-80">
-                 <DropdownMenuLabel className="flex items-center justify-between">
-                     <span>Notifications</span>
-                     {unreadCount > 0 && (
-                         <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-7 px-2 text-xs">
-                             <CheckCheck className="mr-1 h-4 w-4" />
-                             Mark all as read
-                         </Button>
-                     )}
-                 </DropdownMenuLabel>
-                 <DropdownMenuSeparator />
-
-                 {items.length === 0 ? (
-                     <div className="px-2 py-4 text-sm text-muted-foreground">No notifications yet.</div>
-                 ) : (
-                     items.map((item) => (
-                         <DropdownMenuItem
-                             key={item.id}
--                            className="flex cursor-pointer flex-col items-start gap-1 whitespace-normal py-3"
-+                            className={cn(
-+                                "notification-dismiss flex cursor-pointer flex-col items-start gap-1 whitespace-normal py-3",
-+                                closingIds.has(item.id) && "notification-dismiss--leaving"
-+                            )}
-                             onSelect={(event) => handleItemSelect(event, item)}
-                         >
-                             <span className={cn("text-sm", !item.read_at && "font-semibold text-foreground")}>
-                                 {item.message}
-                             </span>
-                             <span className="text-xs text-muted-foreground">{dayjs(item.created_at).fromNow()}</span>
-                         </DropdownMenuItem>
-                     ))
-                 )}
-             </DropdownMenuContent>
-         </DropdownMenu>
-     );
- }
-diff --git a/resources/js/pages/lots/create.tsx b/resources/js/pages/lots/create.tsx
-index 548e345ae00beacc278a6a2ae795faa0677f29c8..5b7540de7dfd76298aba362335eeae983102610c 100644
---- a/resources/js/pages/lots/create.tsx
-+++ b/resources/js/pages/lots/create.tsx
-@@ -1,35 +1,36 @@
- import React, { useMemo, useState, useEffect } from "react"; // ⬅️ добавил useEffect
- import { Head, Link, useForm } from "@inertiajs/react";
- import MainLayout from "@/layouts/main-layout";
- import { Button } from "@/components/ui/button";
- import { route } from "ziggy-js";
- import { TextField } from "@/components/upload-form/text-field";
- import { SelectField } from "@/components/upload-form/select-field";
- import { PageHeader } from "@/components/upload-form/page-header";
- import { ImageUpload } from "@/components/upload-form/image-upload";
- import {BreadcrumbItem} from "@/types";
-+import { BackButton } from "@/components/back-button";
-
- type Enums = {
-     lot_sizes: string[];
-     content_types: string[];
-     furnishings: string[];
-     lot_types: string[];
- };
-
- export default function CreateLot({ enums }: { enums: Enums }) {
-     const breadcrumbs: BreadcrumbItem[] = [
-         { title: "Home", href: route("dashboard") },
-         { title: "Create new lot" },
-     ];
-
-     const { data, setData, post, processing, errors, reset } = useForm<{
-         name: string;
-         description: string | null;
-         creator_id: string;
-         creator_link: string | null;
-         download_link: string | null;
-         lot_size: string;
-         content_type: string;
-         furnishing: string;
-         lot_type: string;
-         bedrooms: number | string;
-@@ -70,53 +71,51 @@ export default function CreateLot({ enums }: { enums: Enums }) {
-     const submit = (e: React.FormEvent) => {
-         e.preventDefault();
-         post(route("lots.store"), {
-             forceFormData: true,
-             onSuccess: () => {
-                 previews.forEach((url) => URL.revokeObjectURL(url));
-                 reset("images");
-                 setPreviews([]);
-             },
-         });
-     };
-
-     const badIndexes = Object.keys(errors)
-         .filter((k) => k.startsWith("images.") && /^\d+$/.test(k.split(".")[1]))
-         .map((k) => Number(k.split(".")[1]));
-     const badSet = useMemo(() => new Set(badIndexes ?? []), [badIndexes]);
-
-     return (
-         <MainLayout breadcrumbs={breadcrumbs}>
-             <Head title="Create lot" />
-             <div className="container mx-auto max-w-screen-md px-4">
-                 <PageHeader
-                     title="Create new lot"
-                     subtitle="Fill the form to publish your Sims 4 lot"
-                     right={
--                        <Link href={route("dashboard")}>
--                            <Button variant="outline">Back</Button>
--                        </Link>
-+                        <BackButton />
-                     }
-                 />
-
-                 <form onSubmit={submit} className="space-y-6">
-                     <div className="grid gap-6 sm:grid-cols-2">
-                         <div className="sm:col-span-2">
-                             <TextField
-                                 id="name"
-                                 label="Name"
-                                 value={data.name}
-                                 onChange={(v) => setData("name", v)}
-                                 placeholder="Willow Creek Cottage"
-                                 error={errors.name as string | undefined}
-                             />
-                         </div>
-
-                         <div className="sm:col-span-2">
-                             <TextField
-                                 id="description"
-                                 label="Description"
-                                 textarea
-                                 value={data.description ?? ""}
-                                 onChange={(v) => setData("description", v)}
-                                 placeholder="Short description"
-                                 error={errors.description as string | undefined}
-diff --git a/resources/js/pages/lots/edit.tsx b/resources/js/pages/lots/edit.tsx
-index 67b3b6b6883ba0f211bd18b87e3c6827d81a63e7..e691a456178cf1470bf6c92996bae9b0e812998b 100644
---- a/resources/js/pages/lots/edit.tsx
-+++ b/resources/js/pages/lots/edit.tsx
-@@ -1,38 +1,39 @@
- import React, { useState } from "react";
- import MainLayout from "@/layouts/main-layout";
- import { Head, Link, router, usePage, useForm } from "@inertiajs/react";
- import { Button } from "@/components/ui/button";
--import { ArrowLeft, Trash2 } from "lucide-react";
-+import { Trash2 } from "lucide-react";
- import type { Enums, FormType, Lot } from "@/types/lots";
- import { route } from "ziggy-js";
- import { LotFormFields } from "@/components/lots/lot-form-fields";
- import { ImagesUploader } from "@/components/lots/image-uploader";
- import { ExistingImagesGrid } from "@/components/lots/existing-images-grid";
- import { FormActions } from "@/components/lots/form-actions";
--import {DeleteLotButton} from "@/components/lots/delete-lot-button";
--import {BreadcrumbItem} from "@/types";
-+import { DeleteLotButton } from "@/components/lots/delete-lot-button";
-+import { BreadcrumbItem } from "@/types";
-+import { BackButton } from "@/components/back-button";
-
- export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
-     const breadcrumbs: BreadcrumbItem[] = [
-         { title: "Home", href: route("dashboard") },
-         { title: lot.name, href: route("lots.view", { lot: lot.id }) },
-         { title: "Edit" },
-     ];
-
-     const initial: FormType = {
-         name: lot.name ?? "",
-         description: lot.description ?? "",
-         creator_id: lot.creator_id ?? "",
-         creator_link: lot.creator_link ?? "",
-         download_link: (lot as any).download_link ?? "",
-         lot_size: lot.lot_size ?? (enums.lot_sizes[0] ?? "20x15"),
-         content_type: lot.content_type ?? (enums.content_types[0] ?? "NoCC"),
-         furnishing: lot.furnishing ?? (enums.furnishings[0] ?? "Furnished"),
-         lot_type: lot.lot_type ?? (enums.lot_types[0] ?? "Residential"),
-         bedrooms: lot.bedrooms ?? "",
-         bathrooms: lot.bathrooms ?? "",
-         images: [],
-     };
-
-     const { data, setData, errors, processing } = useForm<FormType>(initial);
-     const [previews, setPreviews] = useState<string[]>([]);
-@@ -75,56 +76,51 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
-         Object.entries(serverErrors)
-             .filter(([k]) => k === "images" || k.startsWith("images."))
-             .map(([, v]) => String(v))
-     )];
-     const badIndexes = Object.keys(serverErrors)
-         .filter((k) => k.startsWith("images.") && /^\d+$/.test(k.split(".")[1]))
-         .map((k) => Number(k.split(".")[1]));
-
-     const handleDelete = () => {
-         if (!confirm(`Delete "${lot.name}"? This action cannot be undone.`)) return;
-         router.delete(route("lots.destroy", { lot: lot.id }), {
-             preserveScroll: true,
-             onSuccess: () => {
-                 // редирект произойдёт из контроллера (на lots.mine), но можно и здесь:
-                 // router.visit(route("lots.mine"));
-             },
-         });
-     };
-
-     return (
-         <MainLayout breadcrumbs={breadcrumbs}>
-             <Head title={`Edit: ${lot.name}`} />
-
-             <div className="container mx-auto max-w-screen-md px-4">
-                 <div className="flex items-center gap-3 mb-3">
--                    <Link href={route("lots.view", { lot: lot.id })}>
--                        <Button variant="ghost" className="gap-2">
--                            <ArrowLeft className="h-4 w-4" />
--                            Back
--                        </Button>
--                    </Link>
-+                    <BackButton />
-                     <h1 className="text-xl font-semibold">Edit {lot.name}</h1>
-                     <span />
-                 </div>
-
-                 <form onSubmit={submit} className="space-y-6">
-                     <LotFormFields data={data} setData={setData} enums={enums} errors={errors as any} />
-
-                     <ImagesUploader
-                         onFilesChange={onFilesChange}
-                         previews={previews}
-                         badIndexes={badIndexes}
-                         errors={errors as any}
-                     />
-
-                     <div className="space-y-3">
-                         <h2 className="text-lg font-medium">Existing images</h2>
-                         <ExistingImagesGrid
-                             lotId={lot.id}
-                             images={lot.images ?? []}
-                             errorMessages={existingBlockErrors}
-                         />
-                     </div>
-
-                     <div className="mt-8 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-                         <div className="mb-3 text-sm font-medium text-destructive">Danger zone</div>
-diff --git a/resources/js/pages/profile/edit.tsx b/resources/js/pages/profile/edit.tsx
-index 28dbb36760551ff11de9021f30398cf39bee6120..77834e46954c40664e49dd4396a23be06744b614 100644
---- a/resources/js/pages/profile/edit.tsx
-+++ b/resources/js/pages/profile/edit.tsx
-@@ -1,36 +1,37 @@
- // resources/js/pages/profile/edit.tsx
- import React from "react";
- import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
- import MainLayout from "@/layouts/main-layout";
- import { Button } from "@/components/ui/button";
- import { Input } from "@/components/ui/input";
- import { Label } from "@/components/ui/label";
- import { Textarea } from "@/components/ui/textarea";
- import { route } from "ziggy-js";
- import { toast } from "sonner";
- import type { BreadcrumbItem } from "@/types";
-+import { BackButton } from "@/components/back-button";
-
- export default function ProfileEdit() {
-     const { props } = usePage();
-     const user = (props as any).user || (props as any).auth?.user;
-
-     const breadcrumbs: BreadcrumbItem[] = [
-         { title: "Home", href: route("dashboard") },
-         { title: "Users", href: route("users.index") },
-         { title: user.name, href: route("profile.show") },
-         { title: "Edit" },
-     ];
-
-     const pageErrors = ((props as any).errors ?? {}) as Record<string, string>;
-
-     const { data, setData, processing } = useForm<{
-         name: string;
-         email: string;
-         short_about: string | null;
-         about: string | null;
-         external_url: string | null;
-         sims_gallery_id: string | null;
-         current_password: string;
-         password: string;
-         password_confirmation: string;
-         avatar: File | null;
-@@ -65,53 +66,51 @@ export default function ProfileEdit() {
-         fd.append("about", data.about ?? "");
-         fd.append("external_url", data.external_url ?? "");
-         fd.append("sims_gallery_id", data.sims_gallery_id ?? "");
-         if (data.current_password) fd.append("current_password", data.current_password);
-         if (data.password) fd.append("password", data.password);
-         if (data.password_confirmation) fd.append("password_confirmation", data.password_confirmation);
-         if (data.avatar) fd.append("avatar", data.avatar);
-
-         router.post(route("profile.update"), fd, {
-             forceFormData: true,
-             preserveScroll: true,
-             onSuccess: () => toast.success("Profile updated"),
-             onError: () => toast.error("Failed to update profile"),
-         });
-     };
-
-     return (
-         <MainLayout breadcrumbs={breadcrumbs}>
-             <Head title="Edit profile" />
-             <div className="container mx-auto max-w-screen-sm px-4">
-                 <div className="mb-6 flex items-center justify-between">
-                     <div>
-                         <h1 className="mb-1 text-2xl font-semibold">Profile</h1>
-                         <p className="text-sm text-muted-foreground">Update your account information</p>
-                     </div>
--                    <Link href={route("profile.show")}>
--                        <Button variant="outline">Back</Button>
--                    </Link>
-+                    <BackButton />
-                 </div>
-
-                 <form onSubmit={submit} className="space-y-8">
-                     <section className="space-y-4">
-                         <div className="flex items-center gap-4">
-                             <div className="h-16 w-16 overflow-hidden rounded-full border">
-                                 {preview ? (
-                                     <img src={preview} alt="Avatar" className="h-full w-full object-cover" />
-                                 ) : (
-                                     <div className="flex h-full w-full items-center justify-center text-muted-foreground">N/A</div>
-                                 )}
-                             </div>
-                             <div className="space-y-2">
-                                 <Label htmlFor="avatar">Avatar</Label>
-                                 <Input id="avatar" type="file" accept="image/*" onChange={(e) => onAvatarChange(e.target.files?.[0] ?? null)} />
-                                 {pageErrors.avatar && <p className="text-sm text-red-500">{pageErrors.avatar}</p>}
-                                 <div className="flex gap-2">
-                                     <Button type="button" variant="secondary" onClick={() => onAvatarChange(null)}>
-                                         Clear
-                                     </Button>
-                                     <Button
-                                         type="button"
-                                         variant="ghost"
-                                         onClick={() => {
-                                             const form = document.createElement("form");
-diff --git a/resources/js/pages/settings/index.tsx b/resources/js/pages/settings/index.tsx
-index b36577634eb56bd934e39227d6556a0fbbde2698..efaa28dcbe99052f9cd7bd6b2c9e3ad18afea9d0 100644
---- a/resources/js/pages/settings/index.tsx
-+++ b/resources/js/pages/settings/index.tsx
-@@ -1,57 +1,56 @@
- import React from "react";
- import { Head, Link, usePage } from "@inertiajs/react";
- import MainLayout from "@/layouts/main-layout";
- import { Button } from "@/components/ui/button";
- import { route } from "ziggy-js";
- import { Switch } from "@/components/ui/switch";
- import { Label } from "@/components/ui/label";
- import { BreadcrumbItem } from "@/types";
- import { useTheme } from "@/components/theme-provider";
-+import { BackButton } from "@/components/back-button";
-
- const breadcrumbs: BreadcrumbItem[] = [
-     { title: "Home", href: route("dashboard") },
-     { title: "Settings" },
- ];
-
- export default function SettingsIndex() {
-     const { props } = usePage();
-     const user = (props as any)?.auth?.user;
-     const { theme, setTheme } = useTheme();
-
-     return (
-         <MainLayout breadcrumbs={breadcrumbs}>
-             <Head title="Settings" />
-             <div className="container mx-auto max-w-screen-sm px-4">
-                 <div className="mb-6 flex items-center justify-between">
-                     <div>
-                         <h1 className="mb-1 text-2xl font-semibold">Settings</h1>
-                         <p className="text-sm text-muted-foreground">Application preferences</p>
-                     </div>
--                    <Link href={route("dashboard")}>
--                        <Button variant="outline">Back</Button>
--                    </Link>
-+                    <BackButton />
-                 </div>
-
-                 <div className="space-y-6">
-                     <div className="rounded-lg border p-4">
-                         <h2 className="mb-2 text-lg font-medium">Profile</h2>
-                         <p className="mb-4 text-sm text-muted-foreground">
-                             Update your personal information and change password.
-                         </p>
-                         <Link href={route("profile.edit")}>
-                             <Button>Edit profile</Button>
-                         </Link>
-                     </div>
-
-                     <div className="rounded-lg border p-4">
-                         <h2 className="mb-2 text-lg font-medium">Appearance</h2>
-                         <div className="flex items-center justify-between gap-3">
-                             <div>
-                                 <Label htmlFor="theme-toggle" className="text-base font-medium">
-                                     Dark theme
-                                 </Label>
-                                 <p className="text-sm text-muted-foreground">
-                                     Switch between light and dark appearance.
-                                 </p>
-                             </div>
-                             <Switch
-diff --git a/resources/js/types/index.d.ts b/resources/js/types/index.d.ts
-index 73421865cef40bb3d486ce12d05e23581710561b..30f17a5bc6420baa40a03fe69593395485738bd2 100644
---- a/resources/js/types/index.d.ts
-+++ b/resources/js/types/index.d.ts
-@@ -11,50 +11,54 @@ export interface NotificationItem {
-     url?: string | null;
-     created_at: string;
-     read_at?: string | null;
- }
-
- export interface NotificationsState {
-     unread_count: number;
-     items: NotificationItem[];
- }
-
- export interface NavGroup { title: string; items: NavItem[]; }
-
- export interface NavItem {
-     title: string;
-     url: string;
-     icon?: LucideIcon | null;
-     isActive?: boolean;
- }
-
- export interface SharedData {
-     name: string;
-     quote: { message: string; author: string };
-     auth: Auth;
-     sidebarOpen: boolean;
-     notifications?: NotificationsState | null;
-+    navigation?: {
-+        intended_url?: string | null;
-+        previous_url?: string | null;
-+    };
-     [key: string]: unknown;
- }
-
- export interface User {
-     id: number;
-     name: string;
-     email: string;
-     avatar?: string | null;
-     avatar_url?: string | null;
-     is_admin?: boolean;
-     last_seen_at?: string | null;
-     email_verified_at: string | null;
-     created_at: string;
-     updated_at: string;
- }
-
- export type PaginationLink = {
-     url: string | null;
-     label: string;
-     active: boolean;
- };
-
- export interface PaginatedData<T = unknown> {
-     current_page: number | null;
-     data: T[];
++    public function down(): void
++    {
++        Schema::table('lots', function (Blueprint $table) {
++            DB::statement('ALTER TABLE lots MODIFY description VARCHAR(255) NULL');
++        });
++    }
++};

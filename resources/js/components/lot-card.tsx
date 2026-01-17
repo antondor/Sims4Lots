@@ -165,17 +165,21 @@ export function LotCard({ lot }: Props) {
 
                                 {!isCommunity && (
                                     <>
-                                        <LotSpecRow
-                                            icon={<BedDouble className="h-3.5 w-3.5" />}
-                                            label="Bedrooms"
-                                            value={lot.bedrooms ?? 0}
-                                        />
+                                        {lot.bedrooms !== null ?
+                                            <LotSpecRow
+                                                icon={<BedDouble className="h-3.5 w-3.5" />}
+                                                label="Bedrooms"
+                                                value={lot.bedrooms}
+                                            /> : null
+                                        }
 
-                                        <LotSpecRow
-                                            icon={<Bath className="h-3.5 w-3.5" />}
-                                            label="Bathrooms"
-                                            value={lot.bathrooms ?? 0}
-                                        />
+                                        {lot.bedrooms !== null ?
+                                            <LotSpecRow
+                                                icon={<Bath className="h-3.5 w-3.5" />}
+                                                label="Bathrooms"
+                                                value={lot.bathrooms}
+                                            /> : null
+                                        }
                                     </>
                                 )}
                             </div>

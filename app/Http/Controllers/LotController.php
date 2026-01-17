@@ -158,18 +158,29 @@ class LotController extends Controller
     {
         $this->abortIfNotOwner($lot);
 
-        $data = $request->validate($this->rules());
-        $lot->update($data);
+        $validator = Validator::make($request->all(), $this->rules(isNew: false));
+
+        // Добавляем проверку ПОСЛЕ основной валидации
+        $validator->after(function ($validator) use ($request, $lot) {
+            $newImagesCount = $request->hasFile('images') ? count($request->file('images')) : 0;
+            $existingImagesCount = $lot->images()->count();
+
+            if ($newImagesCount + $existingImagesCount === 0) {
+                $validator->errors()->add('images', 'В лоте должно быть хотя бы одно изображение.');
+            }
+        });
+
+        $data = $validator->validate();
+
+        // Обновляем лот (исключая images)
+        $lot->update(collect($data)->except('images')->toArray());
 
         if ($request->hasFile('images')) {
-            $files = array_values($request->file('images'));
             $start = (int)$lot->images()->max('position') + 1;
-            $this->storeLotImages($lot, $files, $start);
+            $this->storeLotImages($lot, $request->file('images'), $start);
         }
 
-        return redirect()
-            ->route('lots.view', ['lot' => $lot->id])
-            ->with('success', 'Lot updated.');
+        return redirect()->route('lots.view', $lot->id)->with('success', 'Lot updated.');
     }
 
     public function mine()
@@ -202,7 +213,7 @@ class LotController extends Controller
 
     public function pendingList(Request $request)
     {
-//        abort_unless(Gate::allows('admin'), 403);
+        abort_unless(Gate::allows('admin'), 403);
 
         $lots = Lot::query()
             ->pending()
@@ -299,11 +310,33 @@ class LotController extends Controller
         return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
     }
 
+    public function destroyImage(Lot $lot, LotImage $image)
+    {
+        $this->abortIfNotOwner($lot);
+
+        // Проверяем, принадлежит ли картинка этому лоту
+        if ($image->lot_id !== $lot->id) {
+            abort(403);
+        }
+
+        // ГЛАВНАЯ ПРОВЕРКА: не даем удалить, если она последняя
+        if ($lot->images()->count() <= 1) {
+            return back()->withErrors(['images' => 'Нельзя удалить последнюю фотографию. Добавьте новую, прежде чем удалять эту.']);
+        }
+
+        // Удаляем файл из S3
+        Storage::disk('s3')->delete("images/lots/{$lot->id}/{$image->filename}");
+
+        // Удаляем запись из БД
+        $image->delete();
+
+        return back()->with('success', 'Изображение удалено.');
+    }
+
     // ====== Private helpers ============================================================
 
     private function attachFavFlag(Builder $query): Builder
     {
-        // если select не задан — выберем lots.*
         if (empty($query->getQuery()->columns)) {
             $query->select('lots.*');
         }
@@ -332,11 +365,11 @@ class LotController extends Controller
         ];
     }
 
-    private function rules(): array
+    private function rules(bool $isNew = true): array
     {
         return [
             'name'          => ['required','string','max:255'],
-            'description'   => ['nullable','string','max:1000'],
+            'description'   => ['nullable','string','max:65535'],
             'creator_id'    => ['nullable','string','max:255'],
             'creator_link'  => ['nullable','url','max:255'],
             'download_link' => ['nullable','url','max:255'],
@@ -346,7 +379,8 @@ class LotController extends Controller
             'lot_type'      => ['required','in:'.implode(',', self::LOT_TYPES)],
             'bedrooms'      => ['nullable','integer','min:0','max:50'],
             'bathrooms'     => ['nullable','integer','min:0','max:50'],
-            'images'        => ['required','array','min:1','max:10'],
+            'images'        => [$isNew ? 'required' : 'nullable', 'array', 'min:1', 'max:10'],
+            'images.*'      => ['image', 'mimes:jpg,jpeg,png', 'max:5120'],
         ];
     }
 

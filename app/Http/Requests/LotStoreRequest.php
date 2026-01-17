@@ -15,7 +15,7 @@ class LotStoreRequest extends FormRequest
     {
         return [
             'name'          => ['required','string','max:255'],
-            'description'   => ['nullable','string','max:1000'],
+            'description'   => ['nullable','string','max:65535'],
             'creator_id'    => ['nullable','string','max:255'],
             'creator_link'  => ['nullable','url','max:255'],
             'download_link' => ['nullable','url','max:255'],

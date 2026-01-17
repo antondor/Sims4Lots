@@ -12,6 +12,7 @@ import { LotShowHeader } from "@/components/lots/lot-show-header";
 import { LotImagesCard } from "@/components/lots/lot-images-card";
 import { LotMainInfo } from "@/components/lots/lot-main-info";
 import { LotAuthorAside } from "@/components/lots/lot-author-aside";
+import {LotDetailsAside} from "@/components/lots/lot-details-aside";
 
 type PageProps = {
     lot: Lot;
@@ -113,8 +114,7 @@ export default function LotShow(props: PageProps) {
                     <div className="space-y-6 lg:col-span-2">
                         <LotMainInfo lot={lot} />
                     </div>
-
-                    <LotAuthorAside user={lot.user} />
+                    <LotDetailsAside lot={lot} />
                 </div>
             </div>
         </MainLayout>

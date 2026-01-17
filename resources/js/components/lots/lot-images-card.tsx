@@ -35,7 +35,7 @@ export const LotImagesCard: React.FC<Props> = ({ lotName, images }) => {
                                             <img
                                                 src={img.url}
                                                 alt={`${lotName} image ${img.position}`}
-                                                className="h-full w-full object-cover"
+                                                className="h-full w-auto object-contain mx-auto"
                                                 loading="lazy"
                                             />
                                         </CarouselItem>
@@ -58,7 +58,7 @@ export const LotImagesCard: React.FC<Props> = ({ lotName, images }) => {
                     </div>
                 </div>
             ) : (
-                <div className="aspect-video w-full rounded-xl border bg-muted" />
+                <div className="aspect-video w-full rounded-xl border bg-muted mb-6" />
             )}
         </>
     );

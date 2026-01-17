@@ -15,7 +15,7 @@ class LotUpdateRequest extends FormRequest
     {
         return [
             'name'          => ['required','string','max:255'],
-            'description'   => ['nullable','string','max:1000'],
+            'description'   => ['nullable','string','max:65535'],
             'creator_id'    => ['nullable','string','max:255'],
             'creator_link'  => ['nullable','url','max:255'],
             'download_link' => ['nullable','url','max:255'],
@@ -25,7 +25,6 @@ class LotUpdateRequest extends FormRequest
             'lot_type'      => ['required','in:Residential,Community'],
             'bedrooms'      => ['nullable','integer','min:0','max:50'],
             'bathrooms'     => ['nullable','integer','min:0','max:50'],
-            'images'        => ['nullable','array','max:10'],
         ];
     }
 }

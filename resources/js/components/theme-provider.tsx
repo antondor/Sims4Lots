@@ -13,10 +13,6 @@ const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = "theme";
 
 function getPreferredTheme(): Theme {
-    if (typeof window === "undefined") {
-        return "light";
-    }
-
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === "dark" || stored === "light") {
         return stored;

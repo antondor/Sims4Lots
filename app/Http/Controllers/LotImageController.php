@@ -56,21 +56,31 @@ class LotImageController extends Controller
             return response()->json(['status' => 'ok']);
         }
 
-        return back()->with('success', 'Cover image updated.');
+        return back()->with('success', 'Cover image updated');
     }
 
     public function destroy(Request $request, Lot $lot, LotImage $image)
     {
         abort_if($image->lot_id !== $lot->id, 404);
 
-        Storage::disk('s3')->delete($image->s3_key ?? "images/lots/{$lot->id}/{$image->filename}");
+        // Добавляем проверку:
+        if ($lot->images()->count() <= 1) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'errors' => ['images' => "Can't delete the last image"]
+                ], 422);
+            }
+            return back()->withErrors(['images' => "Can't delete the last image"]);
+        }
+
+        Storage::disk('s3')->delete("images/lots/{$lot->id}/{$image->filename}");
         $image->delete();
 
-        if ($request->expectsJson() || $request->wantsJson()) {
+        if ($request->expectsJson()) {
             return response()->json(['status' => 'ok']);
         }
 
-        return back()->with('success', 'Image deleted.');
+        return back()->with('success', 'Image deleted');
     }
 
 }
