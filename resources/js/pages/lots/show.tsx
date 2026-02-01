@@ -1,4 +1,3 @@
-import React from "react";
 import { Head, router } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
 import type { Lot } from "@/types/lots";
@@ -11,7 +10,6 @@ import { AlertCircle, ShieldX } from "lucide-react";
 import { LotShowHeader } from "@/components/lots/lot-show-header";
 import { LotImagesCard } from "@/components/lots/lot-images-card";
 import { LotMainInfo } from "@/components/lots/lot-main-info";
-import { LotAuthorAside } from "@/components/lots/lot-author-aside";
 import {LotDetailsAside} from "@/components/lots/lot-details-aside";
 
 type PageProps = {

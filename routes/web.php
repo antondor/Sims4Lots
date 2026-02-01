@@ -6,6 +6,7 @@ use App\Http\Controllers\LotController;
 use App\Http\Controllers\LotImageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SearchHeaderController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserPublicController;
 use App\Models\User;
@@ -38,6 +39,9 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:admin');
 });
 
+Route::prefix('header')->name('header.')->group(function () {
+    Route::get('search', [SearchHeaderController::class, 'search'])->name('search');
+});
 
 Route::prefix('lots')->name('lots.')->group(function () {
     Route::get('search', [LotController::class, 'search'])->name('search');

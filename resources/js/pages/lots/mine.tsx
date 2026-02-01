@@ -9,7 +9,6 @@ import { LotCard } from "@/components/lot-card";
 import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import {route} from "ziggy-js";
-import {PageHeader} from "@/components/page-header";
 import {BreadcrumbItem} from "@/types";
 
 type Props = {

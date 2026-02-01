@@ -1,11 +1,8 @@
 import * as React from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "sonner";
 import { FlashToaster } from "@/components/flash-toaster";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { SiteHeader } from "@/components/site-header";
 import type { BreadcrumbItem } from "@/types";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 type Props = {
     children: React.ReactNode;
@@ -13,35 +10,19 @@ type Props = {
     rightSlot?: React.ReactNode;
 };
 
-export default function MainLayout({
-                                       children,
-                                       breadcrumbs = [{ title: "Home", href: "/dashboard" }],
-                                       rightSlot,
-                                   }: Props) {
+export default function MainLayout({ children }: Props) {
     return (
-        <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-                <AppSidebar />
-                <div className="flex min-h-screen flex-1 flex-col">
-                    <header className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur">
-                        <div className="flex max-w-screen-2xl items-center gap-2 px-4 py-2">
-                            <SidebarTrigger className="-ml-1" />
-                            <Breadcrumbs breadcrumbs={breadcrumbs} />
-                            <div className="ml-auto flex items-center gap-2">
-                                {rightSlot}
-                                <NotificationsDropdown />
-                            </div>
-                        </div>
-                    </header>
+        <div className="relative flex min-h-screen flex-col bg-background">
+            <SiteHeader />
 
-                    <main className="mx-auto w-full max-w-screen-2xl px-4 pb-8 pt-4">
-                        {children}
-                    </main>
-
-                    <Toaster position="bottom-right" />
-                    <FlashToaster />
+            <main className="flex-1">
+                <div className="container mx-auto max-w-screen-2xl py-6 px-4 md:px-8">
+                    {children}
                 </div>
-            </div>
-        </SidebarProvider>
+            </main>
+
+            <Toaster position="bottom-right" />
+            <FlashToaster />
+        </div>
     );
 }

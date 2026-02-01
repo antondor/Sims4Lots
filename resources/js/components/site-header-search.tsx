@@ -7,7 +7,7 @@ import { useAbortableFetch } from "@/hooks/use-abortable-fetch";
 
 type Result = { id: number; name: string; cover_url: string };
 
-export function SidebarSearch() {
+export function SiteHeaderSearch() {
     const [q, setQ] = React.useState("");
     const [open, setOpen] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
@@ -35,7 +35,7 @@ export function SidebarSearch() {
         let mounted = true;
         setLoading(true);
 
-        run(route("lots.search", { q: value }), {
+        run(route("header.search", { q: value }), {
             headers: { "X-Requested-With": "XMLHttpRequest" },
         })
             .then(async ({ res, aborted }) => {
