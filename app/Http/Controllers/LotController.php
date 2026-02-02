@@ -3,18 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lot;
+use Inertia\Inertia;
 use App\Models\LotImage;
-use App\Notifications\LotApprovedNotification;
-use App\Notifications\LotRejectedNotification;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Inertia\Inertia;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
+use Intervention\Image\ImageManager;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Validator;
+use Intervention\Image\Drivers\Gd\Driver;
+use App\Notifications\LotApprovedNotification;
+use App\Notifications\LotRejectedNotification;
+use Illuminate\Http\File;
 
 class LotController extends Controller
 {
@@ -78,6 +82,7 @@ class LotController extends Controller
         $lots = Lot::query()
             ->select(['id','name','updated_at'])
             ->where('name', 'like', "%{$q}%")
+            ->where('status', 'like', "confirmed")
             ->with(['images' => fn ($q) => $q->orderBy('position')->limit(1)])
             ->orderByDesc('updated_at')
             ->limit(8)
@@ -160,7 +165,6 @@ class LotController extends Controller
 
         $validator = Validator::make($request->all(), $this->rules(isNew: false));
 
-        // Добавляем проверку ПОСЛЕ основной валидации
         $validator->after(function ($validator) use ($request, $lot) {
             $newImagesCount = $request->hasFile('images') ? count($request->file('images')) : 0;
             $existingImagesCount = $lot->images()->count();
@@ -172,7 +176,6 @@ class LotController extends Controller
 
         $data = $validator->validate();
 
-        // Обновляем лот (исключая images)
         $lot->update(collect($data)->except('images')->toArray());
 
         if ($request->hasFile('images')) {
@@ -238,20 +241,7 @@ class LotController extends Controller
         ]);
 
         if ($request->hasFile('images')) {
-            $files = $request->file('images');
-            foreach ($files as $idx => $file) {
-                $ext  = $file->getClientOriginalExtension();
-                $dir  = "images/lots/{$lot->id}";
-                $name = Str::uuid().'.'.$ext;
-
-                Storage::disk('s3')->putFileAs($dir, $file, $name);
-
-                LotImage::create([
-                    'lot_id'   => $lot->id,
-                    'filename' => $name,
-                    'position' => $idx,
-                ]);
-            }
+            $this->storeLotImages($lot, $request->file('images'));
         }
 
         return redirect()
@@ -305,6 +295,14 @@ class LotController extends Controller
     public function destroy(Lot $lot)
     {
         $this->abortIfNotOwner($lot);
+
+        $files = Storage::disk('s3')->allFiles("images/lots/{$lot->id}");
+
+        if (!empty($files)) {
+            Storage::disk('s3')->delete($files);
+        }
+
+        $lot->images()->delete();
         $lot->delete();
 
         return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
@@ -314,20 +312,15 @@ class LotController extends Controller
     {
         $this->abortIfNotOwner($lot);
 
-        // Проверяем, принадлежит ли картинка этому лоту
         if ($image->lot_id !== $lot->id) {
             abort(403);
         }
 
-        // ГЛАВНАЯ ПРОВЕРКА: не даем удалить, если она последняя
         if ($lot->images()->count() <= 1) {
             return back()->withErrors(['images' => 'Нельзя удалить последнюю фотографию. Добавьте новую, прежде чем удалять эту.']);
         }
 
-        // Удаляем файл из S3
         Storage::disk('s3')->delete("images/lots/{$lot->id}/{$image->filename}");
-
-        // Удаляем запись из БД
         $image->delete();
 
         return back()->with('success', 'Изображение удалено.');
@@ -402,26 +395,49 @@ class LotController extends Controller
         }
     }
 
-    /** @param UploadedFile[] $files */
-    private function storeLotImages(Lot $lot, array $files, int $startPosition = 0): void
-    {
-        foreach (array_values($files) as $i => $file) {
-            $ext  = $file->getClientOriginalExtension();
-            $dir  = "images/lots/{$lot->id}";
-            $name = Str::uuid().'.'.$ext;
-
-            Storage::disk('s3')->putFileAs($dir, $file, $name);
-
-            LotImage::create([
-                'lot_id'   => $lot->id,
-                'filename' => $name,
-                'position' => $startPosition + $i,
-            ]);
-        }
-    }
-
     private function abortIfNotOwner(Lot $lot): void
     {
         abort_unless(auth()->check() && auth()->id() === $lot->user_id, 403);
+    }
+
+    private function storeLotImages(Lot $lot, array $files, int $startPosition = 0): void
+    {
+        $manager = new ImageManager(new Driver());
+
+        $tempDir = storage_path('app/temp_thumbs');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        foreach (array_values($files) as $i => $file) {
+            $extension = $file->getClientOriginalExtension();
+            $uuid = Str::uuid();
+
+            $dirInS3 = "images/lots/{$lot->id}";
+            $originalName = "{$uuid}.{$extension}";
+            $thumbName    = "{$uuid}_thumb.jpg";
+
+            $localThumbPath = $tempDir . '/' . $thumbName;
+
+            $image = $manager->read($file);
+            $image->scale(width: 400);
+            $image->toJpeg(quality: 80)->save($localThumbPath);
+
+            Storage::disk('s3')->putFileAs(
+                $dirInS3,
+                new File($localThumbPath),
+                $thumbName
+            );
+
+            @unlink($localThumbPath);
+
+            Storage::disk('s3')->putFileAs($dirInS3, $file, $originalName);
+
+            LotImage::create([
+                'lot_id'   => $lot->id,
+                'filename' => $originalName,
+                'position' => $startPosition + $i,
+            ]);
+        }
     }
 }

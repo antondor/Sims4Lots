@@ -5,13 +5,29 @@ import { route } from "ziggy-js";
 import { useDebounced } from "@/hooks/use-debounced";
 import { useAbortableFetch } from "@/hooks/use-abortable-fetch";
 
-type Result = { id: number; name: string; cover_url: string };
+type LotResult = {
+    id: number;
+    name: string;
+    cover_url: string;
+};
+
+type UserResult = {
+    id: number;
+    name: string;
+    avatar_url: string;
+    is_online: boolean;
+};
+
+type SearchData = {
+    users: UserResult[];
+    lots: LotResult[];
+};
 
 export function SiteHeaderSearch() {
     const [q, setQ] = React.useState("");
     const [open, setOpen] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
-    const [results, setResults] = React.useState<Result[]>([]);
+    const [data, setData] = React.useState<SearchData>({ users: [], lots: [] });
 
     const debounced = useDebounced(q, 250);
     const run = useAbortableFetch();
@@ -21,13 +37,13 @@ export function SiteHeaderSearch() {
     };
 
     const onBlur = () => {
-        setTimeout(() => setOpen(false), 120);
+        setTimeout(() => setOpen(false), 200);
     };
 
     React.useEffect(() => {
         const value = debounced.trim();
         if (value.length < 2) {
-            setResults([]);
+            setData({ users: [], lots: [] });
             setOpen(false);
             return;
         }
@@ -41,12 +57,15 @@ export function SiteHeaderSearch() {
             .then(async ({ res, aborted }) => {
                 if (aborted || !mounted) return;
                 const json = await res.json();
-                setResults(json?.data ?? []);
+                setData({
+                    users: json.users || [],
+                    lots: json.lots || []
+                });
                 setOpen(true);
             })
             .catch(() => {
                 if (mounted) {
-                    setResults([]);
+                    setData({ users: [], lots: [] });
                     setOpen(false);
                 }
             })
@@ -59,43 +78,92 @@ export function SiteHeaderSearch() {
         };
     }, [debounced, run]);
 
+    const hasResults = data.users.length > 0 || data.lots.length > 0;
+
     return (
-        <div className="relative">
+        <div className="relative w-full max-w-sm">
             <Input
                 value={q}
                 onChange={onChange}
-                onFocus={() => q.trim().length >= 2 && results.length > 0 && setOpen(true)}
+                onFocus={() => q.trim().length >= 2 && hasResults && setOpen(true)}
                 onBlur={onBlur}
-                placeholder="Search..."
+                placeholder="Search lots or users..."
+                className="w-full"
             />
 
             {open && (
-                <div className="absolute left-0 right-0 z-50 mt-2 max-h-80 overflow-auto rounded-md border bg-background shadow">
+                <div className="absolute left-0 right-0 z-50 mt-2 max-h-[80vh] overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+
                     {loading && (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">Searching…</div>
+                        <div className="px-4 py-3 text-sm text-muted-foreground">Searching...</div>
                     )}
-                    {!loading && results.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">No results</div>
+
+                    {!loading && !hasResults && (
+                        <div className="px-4 py-3 text-sm text-muted-foreground">No results found.</div>
                     )}
-                    {!loading && results.length > 0 && (
-                        <ul className="py-1">
-                            {results.map((r) => (
-                                <li key={r.id}>
-                                    <Link
-                                        href={route("lots.view", { lot: r.id })}
-                                        className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-accent"
-                                    >
-                                        <img
-                                            src={r.cover_url}
-                                            alt=""
-                                            className="h-8 w-12 rounded object-cover"
-                                            loading="lazy"
-                                        />
-                                        <span className="line-clamp-1">{r.name}</span>
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
+
+                    {!loading && hasResults && (
+                        <div className="py-2">
+
+                            {data.users.length > 0 && (
+                                <>
+                                    <h4 className="mb-1 px-3 text-xs font-semibold text-muted-foreground">Users</h4>
+                                    <ul className="mb-2">
+                                        {data.users.map((user) => (
+                                            <li key={`u-${user.id}`}>
+                                                <Link
+                                                    href={route("users.show", { user: user.id })}
+                                                    className="flex items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => setOpen(false)}
+                                                >
+                                                    <img
+                                                        src={user.avatar_url}
+                                                        alt={user.name}
+                                                        className="h-8 w-8 rounded-full object-cover border"
+                                                    />
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium leading-none">{user.name}</span>
+                                                        {user.is_online && <span className="text-[10px] text-green-500">Online</span>}
+                                                    </div>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+
+                            {data.users.length > 0 && data.lots.length > 0 && (
+                                <div className="my-2 h-px bg-border" />
+                            )}
+
+                            {data.lots.length > 0 && (
+                                <>
+                                    <h4 className="mb-2 px-3 text-xs font-semibold text-muted-foreground">Lots</h4>
+                                    <ul className="space-y-1 px-2">
+                                        {data.lots.map((lot) => (
+                                            <li key={`l-${lot.id}`}>
+                                                <Link
+                                                    href={route("lots.view", { lot: lot.id })}
+                                                    onClick={() => setOpen(false)}
+                                                    className="group relative flex h-14 w-full items-center overflow-hidden rounded-md px-4 transition-all hover:scale-[1.008] hover:shadow-sm"
+                                                >
+                                                    <img
+                                                        src={lot.cover_url}
+                                                        alt=""
+                                                        className="absolute inset-0 h-full w-full object-cover blur-[1px] brightness-[0.4]"
+                                                        loading="lazy"
+                                                    />
+
+                                                    <span className="relative z-10 truncate text-white/85">
+                                                        {lot.name}
+                                                    </span>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+                        </div>
                     )}
                 </div>
             )}

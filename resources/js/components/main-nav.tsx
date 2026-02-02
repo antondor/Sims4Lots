@@ -16,7 +16,6 @@ export function MainNav({ className, ...props }: React.HTMLAttributes<HTMLElemen
 
     const links = [
         { title: "Dashboard", href: route("dashboard"), active: route().current("dashboard") },
-        { title: "Search Users", href: route("users.index"), active: route().current("users.index") },
     ];
 
     const authLinks = [
@@ -51,7 +50,6 @@ export function MainNav({ className, ...props }: React.HTMLAttributes<HTMLElemen
                 </Link>
             ))}
 
-            {/* Секция для админа: показываем кнопку только если есть лоты на проверке */}
             {isAdmin && pendingLotsCount > 0 && (
                 <Link
                     href={route("admin.lots.pending")}

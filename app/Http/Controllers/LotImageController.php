@@ -63,7 +63,6 @@ class LotImageController extends Controller
     {
         abort_if($image->lot_id !== $lot->id, 404);
 
-        // Добавляем проверку:
         if ($lot->images()->count() <= 1) {
             if ($request->expectsJson()) {
                 return response()->json([
