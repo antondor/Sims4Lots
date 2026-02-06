@@ -10,7 +10,6 @@
 @source '../**/*.js';
 
 @theme {
-    /* Это сделает Montserrat главным шрифтом для всего сайта */
     --font-sans: 'SN Pro', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 @theme inline {

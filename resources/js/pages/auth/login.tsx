@@ -34,7 +34,7 @@ export default function Login() {
                         Sign in
                     </h1>
                     <p className="mb-6 text-sm text-muted-foreground">
-                        Welcome back. Enter your details to continue.
+                        Welcome back
                     </p>
 
                     <div className="rounded-xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm sm:p-6">

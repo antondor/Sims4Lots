@@ -1,4 +1,3 @@
-// resources/js/pages/profile/edit.tsx
 import React from "react";
 import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
@@ -6,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { route } from "ziggy-js";
 import { toast } from "sonner";
 import type { BreadcrumbItem } from "@/types";
 import { BackButton } from "@/components/back-button";
+import { Separator } from "@/components/ui/separator";
+import { Trash2, Upload, User, Shield, Globe, MailWarning, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ProfileEdit() {
     const { props } = usePage();
@@ -37,7 +40,7 @@ export default function ProfileEdit() {
         avatar: File | null;
     }>({
         name: user?.name ?? "",
-        email: user?.email ?? "",
+        email: user?.unverified_email ?? user?.email ?? "",
         short_about: user?.short_about ?? "",
         about: user?.about ?? "",
         external_url: user?.external_url ?? "",
@@ -52,8 +55,44 @@ export default function ProfileEdit() {
 
     const onAvatarChange = (file: File | null) => {
         setData("avatar", file);
-        if (preview) URL.revokeObjectURL(preview);
+        if (preview && preview !== user?.avatar_url) URL.revokeObjectURL(preview);
         setPreview(file ? URL.createObjectURL(file) : user?.avatar_url ?? null);
+    };
+
+    const handleDeleteAvatar = () => {
+        if (!confirm("Are you sure you want to remove your avatar?")) return;
+
+        const form = document.createElement("form");
+        form.method = "post";
+        form.action = route("profile.avatar.destroy");
+
+        const csrf = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
+        if (csrf?.content) {
+            const token = document.createElement("input");
+            token.type = "hidden";
+            token.name = "_token";
+            token.value = csrf.content;
+            form.appendChild(token);
+        }
+
+        const method = document.createElement("input");
+        method.type = "hidden";
+        method.name = "_method";
+        method.value = "DELETE";
+        form.appendChild(method);
+
+        document.body.appendChild(form);
+        form.submit();
+    };
+
+    const handleCancelEmailChange = () => {
+        if (!confirm("Cancel pending email change?")) return;
+        router.delete(route('profile.email.cancel'), {
+            onSuccess: () => {
+                toast.success("Email change cancelled");
+                setData('email', user.email);
+            }
+        });
     };
 
     const submit = (e: React.FormEvent) => {
@@ -82,163 +121,191 @@ export default function ProfileEdit() {
     return (
         <MainLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit profile" />
-            <div className="container mx-auto max-w-screen-sm px-4">
-                <div className="mb-6 flex items-center justify-between">
+
+            <div className="container mx-auto max-w-4xl px-4 py-6 md:py-8">
+                <div className="mb-8 flex items-center justify-between">
                     <div>
-                        <h1 className="mb-1 text-2xl font-semibold">Profile</h1>
-                        <p className="text-sm text-muted-foreground">Update your account information</p>
+                        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+                        <p className="text-muted-foreground">Manage your profile and account settings.</p>
                     </div>
                     <BackButton />
                 </div>
 
-                <form onSubmit={submit} className="space-y-8">
-                    <section className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className="h-16 w-16 overflow-hidden rounded-full border">
-                                {preview ? (
-                                    <img src={preview} alt="Avatar" className="h-full w-full object-cover" />
-                                ) : (
-                                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">N/A</div>
-                                )}
+                {user.unverified_email && (
+                    <Alert className="mb-6 border-amber-200 bg-amber-50 text-amber-800 flex items-start justify-between">
+                        <div className="flex gap-3">
+                            <MailWarning className="h-5 w-5 mt-0.5" />
+                            <div>
+                                <AlertTitle>Pending Email Change</AlertTitle>
+                                <AlertDescription>
+                                    Verification sent to <strong>{user.unverified_email}</strong>
+                                    Currently using <strong>{user.email}</strong>
+                                </AlertDescription>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="avatar">Avatar</Label>
-                                <Input id="avatar" type="file" accept="image/*" onChange={(e) => onAvatarChange(e.target.files?.[0] ?? null)} />
-                                {pageErrors.avatar && <p className="text-sm text-red-500">{pageErrors.avatar}</p>}
-                                <div className="flex gap-2">
-                                    <Button type="button" variant="secondary" onClick={() => onAvatarChange(null)}>
-                                        Clear
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        onClick={() => {
-                                            const form = document.createElement("form");
-                                            form.method = "post";
-                                            form.action = route("profile.avatar.destroy");
-                                            const csrf = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
-                                            if (csrf?.content) {
-                                                const token = document.createElement("input");
-                                                token.type = "hidden";
-                                                token.name = "_token";
-                                                token.value = csrf.content;
-                                                form.appendChild(token);
-                                            }
-                                            const method = document.createElement("input");
-                                            method.type = "hidden";
-                                            method.name = "_method";
-                                            method.value = "DELETE";
-                                            form.appendChild(method);
-                                            document.body.appendChild(form);
-                                            form.submit();
-                                        }}
-                                    >
-                                        Remove current
-                                    </Button>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCancelEmailChange}
+                            className="text-amber-800 hover:text-amber-900 hover:bg-amber-100 h-8 px-2"
+                        >
+                            <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                    </Alert>
+                )}
+
+                <form onSubmit={submit} className="space-y-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <User className="h-5 w-5" />
+                                Basic Information
+                            </CardTitle>
+                            <CardDescription>Your public profile information.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+                                <div className="relative group">
+                                    <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-border shadow-sm">
+                                        {preview ? (
+                                            <img src={preview} alt="Avatar" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                                                <User className="h-8 w-8" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors">
+                                        <Upload className="h-4 w-4" />
+                                    </label>
+                                    <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={(e) => onAvatarChange(e.target.files?.[0] ?? null)} />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                    <h4 className="font-medium">Profile Picture</h4>
+                                    <p className="text-xs text-muted-foreground">JPG, GIF or PNG. Max size of 2MB.</p>
+                                    <div className="flex gap-2 pt-2">
+                                        <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('avatar-upload')?.click()}>
+                                            Change
+                                        </Button>
+                                        <Button type="button" variant="ghost" size="sm" className="text-red-500 hover:bg-red-50 hover:text-red-600" onClick={handleDeleteAvatar}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Remove
+                                        </Button>
+                                    </div>
+                                    {pageErrors.avatar && <p className="text-sm text-red-500">{pageErrors.avatar}</p>}
                                 </div>
                             </div>
-                        </div>
-                    </section>
 
-                    <section className="grid gap-6 sm:grid-cols-2">
-                        <div className="sm:col-span-2">
-                            <Label htmlFor="name" className="mb-2">Name</Label>
-                            <Input id="name" value={data.name} onChange={(e) => setData("name", e.target.value)} />
-                            {pageErrors.name && <p className="mt-1 text-sm text-red-500">{pageErrors.name}</p>}
-                        </div>
+                            <Separator />
 
-                        <div className="sm:col-span-2">
-                            <Label htmlFor="email" className="mb-2">Email</Label>
-                            <Input id="email" type="email" value={data.email} onChange={(e) => setData("email", e.target.value)} />
-                            {pageErrors.email && <p className="mt-1 text-sm text-red-500">{pageErrors.email}</p>}
-                        </div>
-                    </section>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Display Name</Label>
+                                    <Input id="name" value={data.name} onChange={(e) => setData("name", e.target.value)} />
+                                    {pageErrors.name && <p className="text-sm text-red-500">{pageErrors.name}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            value={data.email}
+                                            onChange={(e) => setData("email", e.target.value)}
+                                        />
+                                        {data.email !== user.email && data.email !== user.unverified_email && (
+                                            <Button type="submit" variant="secondary" disabled={processing}>
+                                                Verify
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {pageErrors.email && <p className="text-sm text-red-500">{pageErrors.email}</p>}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                    <section className="space-y-4">
-                        <h2 className="text-lg font-medium">Public profile</h2>
-
-                        <div className="grid gap-6">
-                            <div>
-                                <Label htmlFor="short_about" className="mb-2">Short intro</Label>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Globe className="h-5 w-5" />
+                                Profile Details
+                            </CardTitle>
+                            <CardDescription>Tell the community about yourself.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="short_about">Short Tagline</Label>
                                 <Input
                                     id="short_about"
                                     maxLength={280}
-                                    placeholder="A short tagline shown under your name"
+                                    placeholder="Builder & Creator."
                                     value={data.short_about ?? ""}
                                     onChange={(e) => setData("short_about", e.target.value)}
                                 />
-                                {pageErrors.short_about && <p className="mt-1 text-sm text-red-500">{pageErrors.short_about}</p>}
-                                <p className="mt-1 text-xs text-muted-foreground">Up to 280 characters.</p>
+                                <p className="text-xs text-muted-foreground text-right">{data.short_about?.length ?? 0}/280</p>
+                                {pageErrors.short_about && <p className="text-sm text-red-500">{pageErrors.short_about}</p>}
                             </div>
 
-                            <div>
-                                <Label htmlFor="about" className="mb-2">Bio</Label>
-                                <Textarea id="about" rows={5} value={data.about ?? ""} onChange={(e) => setData("about", e.target.value)} />
-                                {pageErrors.about && <p className="mt-1 text-sm text-red-500">{pageErrors.about}</p>}
+                            <div className="space-y-2">
+                                <Label htmlFor="about">Biography</Label>
+                                <Textarea
+                                    id="about"
+                                    rows={5}
+                                    placeholder="Share your story..."
+                                    value={data.about ?? ""}
+                                    onChange={(e) => setData("about", e.target.value)}
+                                />
+                                {pageErrors.about && <p className="text-sm text-red-500">{pageErrors.about}</p>}
                             </div>
 
-                            <div className="grid gap-6 sm:grid-cols-2">
-                                <div>
-                                    <Label htmlFor="external_url" className="mb-2">External portfolio URL</Label>
-                                    <Input
-                                        id="external_url"
-                                        type="url"
-                                        placeholder="https://example.com"
-                                        value={data.external_url ?? ""}
-                                        onChange={(e) => setData("external_url", e.target.value)}
-                                    />
-                                    {pageErrors.external_url && <p className="mt-1 text-sm text-red-500">{pageErrors.external_url}</p>}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="external_url">Portfolio / Website</Label>
+                                    <Input id="external_url" type="url" placeholder="https://" value={data.external_url ?? ""} onChange={(e) => setData("external_url", e.target.value)} />
+                                    {pageErrors.external_url && <p className="text-sm text-red-500">{pageErrors.external_url}</p>}
                                 </div>
-
-                                <div>
-                                    <Label htmlFor="sims_gallery_id" className="mb-2">Sims 4 Gallery ID</Label>
-                                    <Input
-                                        id="sims_gallery_id"
-                                        value={data.sims_gallery_id ?? ""}
-                                        onChange={(e) => setData("sims_gallery_id", e.target.value)}
-                                    />
-                                    {pageErrors.sims_gallery_id && <p className="mt-1 text-sm text-red-500">{pageErrors.sims_gallery_id}</p>}
+                                <div className="space-y-2">
+                                    <Label htmlFor="sims_gallery_id">Origin / Gallery ID</Label>
+                                    <Input id="sims_gallery_id" value={data.sims_gallery_id ?? ""} onChange={(e) => setData("sims_gallery_id", e.target.value)} />
+                                    {pageErrors.sims_gallery_id && <p className="text-sm text-red-500">{pageErrors.sims_gallery_id}</p>}
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                        </CardContent>
+                    </Card>
 
-                    <section className="space-y-4">
-                        <h2 className="text-lg font-medium">Change password</h2>
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            <div>
-                                <Label htmlFor="current_password" className="mb-2">Current password</Label>
-                                <Input
-                                    id="current_password"
-                                    type="password"
-                                    value={data.current_password}
-                                    onChange={(e) => setData("current_password", e.target.value)}
-                                />
-                                {pageErrors.current_password && <p className="mt-1 text-sm text-red-500">{pageErrors.current_password}</p>}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Shield className="h-5 w-5" />
+                                Security
+                            </CardTitle>
+                            <CardDescription>Update your password. Leave blank to keep current.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="current_password">Current Password</Label>
+                                <Input id="current_password" type="password" value={data.current_password} onChange={(e) => setData("current_password", e.target.value)} />
+                                {pageErrors.current_password && <p className="text-sm text-red-500">{pageErrors.current_password}</p>}
                             </div>
-                            <div>
-                                <Label htmlFor="password" className="mb-2">New password</Label>
-                                <Input id="password" type="password" value={data.password} onChange={(e) => setData("password", e.target.value)} />
-                                {pageErrors.password && <p className="mt-1 text-sm text-red-500">{pageErrors.password}</p>}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">New Password</Label>
+                                    <Input id="password" type="password" value={data.password} onChange={(e) => setData("password", e.target.value)} />
+                                    {pageErrors.password && <p className="text-sm text-red-500">{pageErrors.password}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="password_confirmation">Confirm Password</Label>
+                                    <Input id="password_confirmation" type="password" value={data.password_confirmation} onChange={(e) => setData("password_confirmation", e.target.value)} />
+                                </div>
                             </div>
-                            <div className="sm:col-span-2">
-                                <Label htmlFor="password_confirmation" className="mb-2">Confirm new password</Label>
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    value={data.password_confirmation}
-                                    onChange={(e) => setData("password_confirmation", e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </section>
-
-                    <div className="flex items-center justify-end gap-3">
-                        <Link href={route("dashboard")} className="inline-flex">
-                            <Button type="button" variant="ghost">Cancel</Button>
-                        </Link>
-                        <Button type="submit" disabled={processing}>Save changes</Button>
-                    </div>
+                        </CardContent>
+                        <CardFooter className="justify-end border-t bg-muted/20 px-6 py-4">
+                            <Button type="submit" disabled={processing} size="lg">
+                                Save Changes
+                            </Button>
+                        </CardFooter>
+                    </Card>
                 </form>
             </div>
         </MainLayout>

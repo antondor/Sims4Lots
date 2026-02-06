@@ -12,8 +12,8 @@ class Lot extends Model
     use HasFactory, SoftDeletes, Favoritable;
 
     protected $fillable = [
-        'user_id','name','description','creator_id','creator_link','download_link',
-        'lot_size','content_type','furnishing','lot_type','bedrooms','bathrooms',
+        'user_id','name','description','creator_link','download_link',
+        'gallery_id', 'lot_size','content_type','furnishing','lot_type','bedrooms','bathrooms',
         'status','rejection_reason',
     ];
 

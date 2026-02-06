@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, Copy } from "lucide-react";
 import { route } from "ziggy-js";
 import { FavouriteToggle } from "@/components/common/FavouriteToggle";
 import { LotDownloadButton } from "@/components/lots/lot-download-button";
 import type { Lot } from "@/types/lots";
+import { toast } from "sonner";
 import {
     Dialog,
     DialogContent,
@@ -31,16 +32,15 @@ type Props = {
 };
 
 export const LotShowHeader: React.FC<Props> = ({
-                                                   lot,
-                                                   isOwner,
-                                                   canModerate,
-                                                   isAdmin,
-                                                   isPendingForCurrentUser,
-                                                   onApprove,
-                                                   onReject,
-                                                   initialLiked,
-                                                   initialCount,
-                                               }) => {
+    lot,
+    isOwner,
+    canModerate,
+    isPendingForCurrentUser,
+    onApprove,
+    onReject,
+    initialLiked,
+    initialCount,
+}) => {
     const canShowFavourite = lot.status === "confirmed";
     const [isRejectDialogOpen, setIsRejectDialogOpen] = React.useState(false);
     const [rejectReason, setRejectReason] = React.useState<string>("");
@@ -49,6 +49,13 @@ export const LotShowHeader: React.FC<Props> = ({
         onReject(rejectReason.trim() || undefined);
         setRejectReason("");
         setIsRejectDialogOpen(false);
+    };
+
+    const handleCopyId = () => {
+        if (lot.gallery_id) {
+            navigator.clipboard.writeText(lot.gallery_id);
+            toast.success("Gallery ID copied to clipboard");
+        }
     };
 
     return (
@@ -112,7 +119,19 @@ export const LotShowHeader: React.FC<Props> = ({
                     />
                 )}
 
-                <LotDownloadButton href={lot.download_link} />
+                {lot.download_link ? (
+                    <LotDownloadButton href={lot.download_link} />
+                ) : lot.gallery_id ? (
+                    <Button
+                        variant="outline"
+                        onClick={handleCopyId}
+                        className="gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                        title="Copy EA Gallery ID"
+                    >
+                        <Copy className="h-4 w-4" />
+                        <span className="font-mono font-medium">Gallery ID: {lot.gallery_id}</span>
+                    </Button>
+                ) : null}
 
                 {isOwner && (
                     <Link href={route("lots.edit", lot.id)}>
@@ -127,9 +146,12 @@ export const LotShowHeader: React.FC<Props> = ({
                     </Link>
                 )}
 
-                <Link href={route("dashboard")}>
-                    <Button variant="outline">Back</Button>
-                </Link>
+                <Button
+                    variant="outline"
+                    onClick={() => window.history.back()}
+                >
+                    Back
+                </Button>
             </div>
         </div>
     );

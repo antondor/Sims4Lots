@@ -23,7 +23,7 @@ class SearchHeaderController extends Controller
             ->select(['id', 'name', 'updated_at'])
             ->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm)
-                  ->orWhere('description', 'LIKE', $searchTerm);
+                    ->orWhere('description', 'LIKE', $searchTerm);
             })
             ->with(['images' => fn($q) => $q->select('lot_id', 'filename', 'position')->orderBy('position')->limit(1)])
             ->orderByDesc('updated_at')
@@ -31,10 +31,10 @@ class SearchHeaderController extends Controller
             ->get()
             ->map(function (Lot $lot) {
                 $cover = $lot->images->first();
+                $coverUrl = null;
                 if ($cover) {
                     $pathInfo = pathinfo($cover->filename);
                     $thumbFilename = $pathInfo['filename'] . '_thumb.jpg';
-
                     $coverUrl = Storage::disk('s3')->url("images/lots/{$lot->id}/{$thumbFilename}");
                 }
 
@@ -46,7 +46,7 @@ class SearchHeaderController extends Controller
             });
 
         $users = User::query()
-            ->select(['id', 'name', 'avatar', 'about', 'short_about', 'created_at', 'last_seen_at'])
+            ->select(['id', 'name', 'avatar', 'about', 'short_about', 'created_at', 'last_seen_at', 'is_admin'])
             ->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm);
             })
@@ -62,6 +62,7 @@ class SearchHeaderController extends Controller
                 'created_at'   => $user->created_at?->toIso8601String(),
                 'last_seen_at' => $user->last_seen_at?->toIso8601String(),
                 'is_online'    => $user->is_online,
+                'is_admin'     => $user->is_admin,
             ]);
 
         return response()->json([

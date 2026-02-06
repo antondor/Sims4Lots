@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Laravel + Inertia</title>
+    <title>PLOTPALETTE</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,11 +17,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
         (() => {
-            const storageKey = "theme";
             try {
-                const stored = localStorage.getItem(storageKey);
-                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                const theme = stored === "dark" || stored === "light" ? stored : prefersDark ? "dark" : "light";
+                const stored = localStorage.getItem("theme");
+                const theme = stored === "dark" || stored === "light" ? stored : "light";
                 const root = document.documentElement;
                 root.classList.toggle("dark", theme === "dark");
                 root.style.colorScheme = theme;

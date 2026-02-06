@@ -1,9 +1,10 @@
-import React from "react";
 import MainLayout from "@/layouts/main-layout";
 import { Head, Link } from "@inertiajs/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, CalendarDays, Folder, Heart } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+// 1. Добавляем ShieldCheck в импорты
+import { ExternalLink, CalendarDays, Folder, Heart, Link as LinkIcon, Edit3, ShieldCheck } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { LotCard } from "@/components/lot-card";
@@ -25,6 +26,8 @@ type UserDto = {
     created_at: string;
     last_seen_at?: string | null;
     is_online?: boolean;
+    // 2. Добавляем поле is_admin
+    is_admin?: number | boolean;
 };
 
 type Props = {
@@ -43,202 +46,222 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
         { title: user.name },
     ];
 
-    const avatar = user.avatar_url;
     const lots = latestLots ?? [];
     const hasLots = lots.length > 0;
-
-    const completenessParts = [
-        Boolean(user.short_about),
-        Boolean(user.about),
-        Boolean(user.external_url),
-        Boolean(user.sims_gallery_id),
-    ];
-    const completeScore = Math.round((completenessParts.filter(Boolean).length / completenessParts.length) * 100);
 
     return (
         <MainLayout breadcrumbs={breadcrumbs}>
             <Head title={`${user.name} — Profile`} />
-            <div className="container mx-auto px-4">
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                    <img src={avatar} alt={user.name} className="h-24 w-24 rounded-full object-cover ring-2 ring-border" />
-                    <div className="flex-1">
-                        <h1 className="text-2xl font-semibold">{user.name}</h1>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            <CalendarDays className="mr-1 inline-block h-4 w-4" />
-                            Joined {dayjs(user.created_at).format("MMMM D, YYYY")} (
-                            {user.is_online
-                                ? "Online"
-                                : user.last_seen_at
-                                    ? `Last seen ${dayjs(user.last_seen_at).fromNow()}`
-                                    : dayjs(user.created_at).fromNow()}
-                            )
-                        </p>
-                        <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
-                            {user.short_about ?? null}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
+
+            <div className="container mx-auto px-4 py-6 md:py-8">
+                <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+                    <div className="shrink-0 text-center md:text-left">
+                        <div className="relative mx-auto inline-block md:mx-0">
+                            <img
+                                src={user.avatar_url}
+                                alt={user.name}
+                                className="h-28 w-28 rounded-full object-cover ring-4 ring-background shadow-lg md:h-32 md:w-32"
+                            />
+                            {user.is_online && (
+                                <span className="absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-background bg-green-500" />
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 space-y-4 text-center md:text-left">
+                        <div>
+                            <div className="flex items-center justify-center gap-3 md:justify-start">
+                                <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
+                                {user.is_admin && (
+                                    <div className="flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-inset ring-red-600/10">
+                                        <ShieldCheck className="h-3.5 w-3.5" />
+                                        Admin
+                                    </div>
+                                )}
+                            </div>
+
+                            {user.short_about && (
+                                <p className="mt-2 text-lg text-muted-foreground">{user.short_about}</p>
+                            )}
+                            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground md:justify-start">
+                                <span className="flex items-center gap-1.5">
+                                    <CalendarDays className="h-4 w-4" />
+                                    Joined {dayjs(user.created_at).format("MMMM YYYY")}
+                                </span>
+                                {!user.is_online && user.last_seen_at && (
+                                    <span>Last seen {dayjs(user.last_seen_at).fromNow()}</span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
                             {isOwner && (
                                 <Link href={route("profile.edit")}>
-                                    <Button className="gap-1">Edit profile</Button>
+                                    <Button size="sm" className="gap-2">
+                                        <Edit3 className="h-4 w-4" />
+                                        Edit Profile
+                                    </Button>
                                 </Link>
                             )}
+
                             {user.external_url && (
                                 <a href={user.external_url} target="_blank" rel="noreferrer">
-                                    <Button variant="secondary" className="gap-1">
+                                    <Button variant="outline" size="sm" className="gap-2">
                                         <ExternalLink className="h-4 w-4" />
-                                        External portfolio
+                                        Portfolio
                                     </Button>
                                 </a>
                             )}
-                            {user.sims_gallery_id && (
-                                <a
-                                    href={`https://www.ea.com/games/the-sims/the-sims-4/pc/gallery/search/${encodeURIComponent(user.sims_gallery_id)}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    <Button variant="outline" className="gap-1">
-                                        <ExternalLink className="h-4 w-4" />
-                                        Sims 4 Gallery
-                                    </Button>
-                                </a>
-                            )}
+
                             {isOwner && (
-                                <Link href={route("lots.mine")}>
-                                    <Button variant="ghost" className="gap-1">
-                                        <Folder className="h-4 w-4" />
-                                        My lots
-                                    </Button>
-                                </Link>
+                                <>
+                                    <Link href={route("myLots")}>
+                                        <Button variant="ghost" size="sm" className="gap-2">
+                                            <Folder className="h-4 w-4" />
+                                            My Lots
+                                        </Button>
+                                    </Link>
+                                    <Link href={route("favourites.index", { user: user.id })}>
+                                        <Button variant="ghost" size="sm" className="gap-2">
+                                            <Heart className="h-4 w-4" />
+                                            Favourites
+                                        </Button>
+                                    </Link>
+                                </>
                             )}
-                            <Link href={route("favourites.index", { user: user.id })}>
-                                <Button variant="ghost" className="gap-1">
-                                    <Heart className="h-4 w-4" />
-                                    Favourites
-                                </Button>
-                            </Link>
                         </div>
                     </div>
                 </div>
 
-                <Card className="mt-6 gap-0">
-                    <CardHeader className="pb-3">
-                        <CardTitle>About</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {user.about ? (
-                            <p className="whitespace-pre-line leading-relaxed">{user.about}</p>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">
-                                No bio yet. {isOwner ? "Add a short introduction in profile settings so others can get to know you." : ""}
-                            </p>
-                        )}
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                            <InfoRow label="Public link" value={user.external_url ?? "—"} />
-                            <InfoRow label="Sims 4 Gallery ID" value={user.sims_gallery_id ?? "—"} />
-                        </div>
-                        {isOwner && (
-                            <div className="mt-6 rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed text-muted-foreground">
-                                <div className="mb-1 font-medium text-foreground">Profile completeness: {completeScore}%</div>
-                                <div>
-                                    {completeScore < 100
-                                        ? "Add a bio, a public link, or your Gallery ID to help others discover your work"
-                                        : "Great work — your profile is fully completed and easier to discover."}
-                                </div>
+                <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12">
+
+                    <div className="order-2 space-y-8 lg:order-1 lg:col-span-8">
+                        {topLot && (
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    Top Rated
+                                </h3>
+                                <LotCard lot={topLot} />
                             </div>
                         )}
-                    </CardContent>
-                </Card>
 
-                <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_32rem]">
-                    <div className="mt-6 rounded-xl border py-6 pl-5 pr-5">
-                        <div className="mb-3 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Latest lots</h2>
-                        </div>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-semibold">Latest Uploads</h3>
+                            </div>
 
-                        {!hasLots ? (
-                            <Card>
-                                <CardContent className="text-sm text-muted-foreground">
-                                    Nothing here yet.{" "}
-                                    {isOwner
-                                        ? "Create your first lot and start building your showcase"
-                                        : "This creator hasn’t published lots yet"}
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            <div className="divide-y rounded-lg border">
-                                {lots.map((lot) => {
-                                const cover = (lot as any).cover_image?.url ?? lot.images?.[0]?.url ?? "/images/lot-placeholder.jpg";
-                                const favCount = (lot as any).favorites_count ?? 0;
-                                const showFavourite = canShowFavourite(lot);
+                            {!hasLots ? (
+                                <Card className="border-dashed">
+                                    <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                                        <Folder className="mb-3 h-10 w-10 opacity-20" />
+                                        <p>No lots published yet.</p>
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    {lots.map((lot) => {
+                                        const cover = (lot as any).cover_image?.url ?? lot.images?.[0]?.url ?? "/images/lot-placeholder.jpg";
+                                        const favCount = (lot as any).favorites_count ?? 0;
 
-                                    return (
-                                        <div key={lot.id} className="flex items-center gap-3 p-3">
-                                            <img
-                                                src={cover}
-                                                alt={lot.name}
-                                                className="h-12 w-16 flex-none rounded object-cover ring-1 ring-border"
-                                                loading="lazy"
-                                            />
-
-                                            <div className="min-w-0 flex-1">
-                                                <Link
-                                                    href={route("lots.view", { lot: lot.id })}
-                                                    className="line-clamp-1 text-sm font-medium hover:underline"
-                                                    title={lot.name}
-                                                >
-                                                    {lot.name}
-                                                </Link>
-
-                                                <div className="mt-0.5 text-xs text-muted-foreground">
-                                                    {lot.lot_type} • {lot.lot_size} • {dayjs(lot.created_at).fromNow()}
-                                                </div>
-                                            </div>
-
-                                            {showFavourite && (
-                                                <div className="flex items-center gap-2">
-                                                    <FavouriteToggle
-                                                        lotId={lot.id}
-                                                        initialLiked={Boolean((lot as any).is_favorited)}
-                                                        initialCount={favCount}
-                                                        size="sm"
-                                                        showCount
+                                        return (
+                                            <div key={lot.id} className="group relative flex gap-4 overflow-hidden rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50">
+                                                <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-md bg-muted">
+                                                    <img
+                                                        src={cover}
+                                                        alt={lot.name}
+                                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                        loading="lazy"
                                                     />
                                                 </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                                <div className="flex flex-1 flex-col justify-between py-0.5">
+                                                    <div className="space-y-1">
+                                                        <Link href={route("lots.view", { lot: lot.id })} className="block font-medium leading-tight hover:underline">
+                                                            <span className="absolute inset-0 z-10" />
+                                                            {lot.name}
+                                                        </Link>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {lot.lot_type} • {lot.lot_size}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">{dayjs(lot.created_at).fromNow()}</span>
+                                                        {canShowFavourite(lot) && (
+                                                            <div className="relative z-20">
+                                                                <FavouriteToggle
+                                                                    lotId={lot.id}
+                                                                    initialLiked={Boolean((lot as any).is_favorited)}
+                                                                    initialCount={favCount}
+                                                                    size="sm"
+                                                                    showCount
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <Card className="mt-6 gap-0">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Top liked</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            {topLot ? (
-                                <div className="min-w-0">
-                                    <LotCard lot={topLot} />
-                                </div>
-                            ) : (
-                                <Card>
-                                    <CardContent className="text-sm text-muted-foreground">No lots to highlight yet</CardContent>
-                                </Card>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <div className="order-1 space-y-6 lg:order-2 lg:col-span-4">
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                About
+                            </h3>
+                            <Card>
+                                <CardContent className="space-y-6 pt-6">
+                                    <div className="text-sm leading-relaxed text-muted-foreground">
+                                        {user.about ? (
+                                            <p className="whitespace-pre-line">{user.about}</p>
+                                        ) : (
+                                            <p className="italic text-muted-foreground/50">No biography provided.</p>
+                                        )}
+                                    </div>
+
+                                    <Separator />
+
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="flex items-center gap-2 text-muted-foreground">
+                                                <LinkIcon className="h-4 w-4" />
+                                                Website
+                                            </span>
+                                            {user.external_url ? (
+                                                <a href={user.external_url} target="_blank" rel="noreferrer" className="max-w-[150px] truncate font-medium text-primary hover:underline">
+                                                    {new URL(user.external_url).hostname}
+                                                </a>
+                                            ) : (
+                                                <span className="text-muted-foreground">—</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="flex items-center gap-2 text-muted-foreground">
+                                                <svg role="img" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4"><path d="M12.87 20.69c-3.1 1.77-6.23-1.6-9.13-4.5S-.9 9.8 1.87 8.2c1.78-1.03 3.96-.34 4.54 1.43.34 1.04-.54 2.22-1.63 2.68a2.1 2.1 0 00-1.25 1.96c.03 2.1 2.87 4.95 4.97 4.97a2.1 2.1 0 001.96-1.25c.46-1.09 1.64-1.97 2.68-1.63 1.77.58 2.46 2.76 1.43 4.54-.57.99-1.23 1.54-1.7 1.8zm3.56-5.46c-1.52-.5-3.05.65-3.66 2.07-.35.8-2.6 3.05-3.4 3.4-1.42.6-2.58 2.13-2.07 3.66.75 2.27 3.9 1.53 7.82-2.39 3.92-3.92 4.66-7.07 2.39-7.82-1.53-.5-3.06.66-3.66 2.08-.36.8-2.6 3.05-3.4 3.4-1.43.6-2.58 2.13-2.08 3.66.75 2.27 3.9 1.53 7.82-2.39 3.92-3.92 4.66-7.07 2.39-7.82h-.01z" /></svg>
+                                                Origin ID
+                                            </span>
+                                            <span className="font-medium">{user.sims_gallery_id || "—"}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted p-4">
+                                        <div className="text-center">
+                                            <div className="text-2xl font-bold">{stats.lots}</div>
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lots</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-2xl font-bold">{stats.favourites}</div>
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Likes</div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
                 </div>
             </div>
         </MainLayout>
-    );
-}
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div className="flex items-center justify-between gap-4 rounded-lg border bg-background/50 px-3 py-2">
-            <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="max-w-[60%] truncate text-sm font-medium">{value}</dd>
-        </div>
     );
 }

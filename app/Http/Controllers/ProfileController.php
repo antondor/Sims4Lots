@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UpdateProfileRequest;
 use App\Models\Lot;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use App\Notifications\VerifyNewEmail;
+use Illuminate\Support\Facades\Storage;
+use App\Notifications\EmailChangeVerified;
+use App\Http\Requests\UpdateProfileRequest;
+use Illuminate\Support\Facades\Notification;
 
 class ProfileController extends Controller
 {
@@ -23,6 +26,7 @@ class ProfileController extends Controller
                 'id'              => $user->id,
                 'name'            => $user->name,
                 'email'           => $user->email,
+                'unverified_email' => $user->unverified_email,
                 'about'           => $user->about,
                 'short_about'     => $user->short_about,
                 'avatar'          => $user->avatar,
@@ -34,9 +38,97 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Общий метод отображения профиля любого пользователя
-     */
+    public function update(UpdateProfileRequest $request)
+    {
+        $user = $request->user();
+        $data = $request->validated();
+
+        $fillable = ['name', 'about', 'short_about', 'external_url', 'sims_gallery_id'];
+        $user->fill(Arr::only($data, $fillable));
+
+        if ($data['email'] !== $user->email) {
+            $user->unverified_email = $data['email'];
+
+            $notification = new VerifyNewEmail($user->id, $data['email']);
+            $user->notify($notification);
+
+            Notification::route('mail', $data['email'])
+                ->notify($notification);
+        }
+
+        if (!empty($data['password'])) {
+            if (empty($data['current_password']) || !Hash::check($data['current_password'], $user->password)) {
+                return back()
+                    ->withErrors(['current_password' => 'Current password is incorrect.'])
+                    ->withInput();
+            }
+            $user->password = Hash::make($data['password']);
+        }
+
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $ext  = $file->getClientOriginalExtension();
+            $name = Str::uuid() . '.' . $ext;
+            $dir  = "avatars/{$user->id}";
+
+            if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
+                if (str_contains($user->avatar, '/')) {
+                    Storage::disk('s3')->delete($user->avatar);
+                } else {
+                    Storage::disk('s3')->delete("$dir/{$user->avatar}");
+                }
+            }
+
+            Storage::disk('s3')->putFileAs($dir, $file, $name);
+            $user->avatar = $name;
+        }
+
+        $user->save();
+
+        $message = $user->unverified_email
+            ? "We've sent a verification link to {$user->unverified_email}."
+            : 'Profile updated';
+
+        return redirect()->route('profile.show')->with('success', $message);
+    }
+
+    public function verifyEmailChange(Request $request, $hash)
+    {
+        $user = $request->user();
+
+        if (!$user && $request->has('user')) {
+            $user = User::findOrFail($request->query('user'));
+        }
+
+        if (!$user) {
+            abort(401);
+        }
+
+        $newEmail = $request->query('new_email');
+
+        if (!$user->unverified_email || $user->unverified_email !== $newEmail || sha1($newEmail) !== $hash) {
+            abort(403, 'Invalid or expired link');
+        }
+
+        $user->email = $user->unverified_email;
+        $user->unverified_email = null;
+        $user->email_verified_at = now();
+        $user->save();
+
+        $user->notify(new EmailChangeVerified());
+
+        return redirect()->route('profile.show')->with('success', 'Email changed successfully!');
+    }
+
+    public function cancelEmailChange(Request $request)
+    {
+        $user = $request->user();
+        $user->unverified_email = null;
+        $user->save();
+
+        return back()->with('success', 'Email change request cancelled.');
+    }
+
     public function showUser(User $profileOwner, ?User $viewer = null)
     {
         $data = $this->buildProfileData($profileOwner, $viewer);
@@ -44,9 +136,6 @@ class ProfileController extends Controller
         return Inertia::render('profile/show', $data);
     }
 
-    /**
-     * Свой профиль: /profile
-     */
     public function show(Request $request)
     {
         $user   = $request->user();
@@ -55,9 +144,6 @@ class ProfileController extends Controller
         return $this->showUser($user, $viewer);
     }
 
-    /**
-     * Вся бизнес-логика профиля в одном месте
-     */
     private function buildProfileData(User $profileOwner, ?User $viewer = null): array
     {
         $viewerId = $viewer?->id;
@@ -93,6 +179,7 @@ class ProfileController extends Controller
             'user' => [
                 'id'              => $profileOwner->id,
                 'name'            => $profileOwner->name,
+                'is_admin'        => $profileOwner->is_admin,
                 'avatar_url'      => $profileOwner->avatar_url,
                 'about'           => $profileOwner->about,
                 'short_about'     => $profileOwner->short_about,
@@ -110,46 +197,6 @@ class ProfileController extends Controller
             'topLot'     => $topLot,
             'isOwner'    => $viewerId !== null && $viewerId === $profileOwner->id,
         ];
-    }
-
-    public function update(UpdateProfileRequest $request)
-    {
-        $user = $request->user();
-        $data = $request->validated();
-
-        $fillable = ['name', 'email', 'about', 'short_about', 'external_url', 'sims_gallery_id'];
-        $user->fill(Arr::only($data, $fillable));
-
-        if (!empty($data['password'])) {
-            if (empty($data['current_password']) || !Hash::check($data['current_password'], $user->password)) {
-                return back()
-                    ->withErrors(['current_password' => 'Current password is incorrect.'])
-                    ->withInput();
-            }
-            $user->password = Hash::make($data['password']);
-        }
-
-        if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            $ext  = $file->getClientOriginalExtension();
-            $name = Str::uuid() . '.' . $ext;
-            $dir  = "avatars/{$user->id}";
-
-            if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
-                if (str_contains($user->avatar, '/')) {
-                    Storage::disk('s3')->delete($user->avatar);
-                } else {
-                    Storage::disk('s3')->delete("$dir/{$user->avatar}");
-                }
-            }
-
-            Storage::disk('s3')->putFileAs($dir, $file, $name);
-            $user->avatar = $name;
-        }
-
-        $user->save();
-
-        return redirect()->route('profile.show')->with('success', 'Profile updated');
     }
 
     public function destroyAvatar(Request $request)

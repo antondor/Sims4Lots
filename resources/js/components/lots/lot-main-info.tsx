@@ -1,7 +1,5 @@
 import React from "react";
 import type { Lot } from "@/types/lots";
-import { Badge } from "@/components/ui/badge";
-import { LotSpecsGrid, SpecItem } from "@/components/lots/lot-specs";
 
 type Props = {
     lot: Lot;

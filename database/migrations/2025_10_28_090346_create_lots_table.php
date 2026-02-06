@@ -12,18 +12,19 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->string('name');
-            $table->string('description')->nullable();
-            $table->string('creator_id')->nullable();
+            $table->text('description')->nullable();
             $table->string('creator_link')->nullable();
             $table->string('download_link')->nullable();
-            $table->enum('lot_size', ['20x15','30x20','40x30','50x50','64x64']);
-            $table->enum('content_type', ['CC','NoCC']);
-            $table->enum('furnishing', ['Furnished','Unfurnished']);
-            $table->enum('lot_type', ['Residential','Community']);
+            $table->string('gallery_id')->nullable();
+            $table->enum('lot_size', ['20x15', '30x20', '40x30', '50x50', '64x64']);
+            $table->enum('content_type', ['CC', 'NoCC']);
+            $table->enum('furnishing', ['Furnished', 'Unfurnished']);
+            $table->enum('lot_type', ['Residential', 'Community']);
             $table->tinyInteger('bedrooms')->nullable();
             $table->tinyInteger('bathrooms')->nullable();
-            $table->enum('status', ['pending','confirmed','invalid'])
+            $table->enum('status', ['pending', 'confirmed', 'invalid'])
                 ->default('pending');
+            $table->text('rejection_reason')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

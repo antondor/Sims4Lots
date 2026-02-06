@@ -1,14 +1,12 @@
-import React, { useMemo, useState, useEffect } from "react"; // ⬅️ добавил useEffect
+import React, { useMemo, useState, useEffect } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import MainLayout from "@/layouts/main-layout";
 import { Button } from "@/components/ui/button";
 import { route } from "ziggy-js";
-import { TextField } from "@/components/upload-form/text-field";
-import { SelectField } from "@/components/upload-form/select-field";
 import { PageHeader } from "@/components/upload-form/page-header";
-import { ImageUpload } from "@/components/upload-form/image-upload";
-import {BreadcrumbItem} from "@/types";
+import { BreadcrumbItem } from "@/types";
 import { BackButton } from "@/components/back-button";
+import { LotForm } from "@/components/lots/lot-form";
 
 type Enums = {
     lot_sizes: string[];
@@ -26,9 +24,9 @@ export default function CreateLot({ enums }: { enums: Enums }) {
     const { data, setData, post, processing, errors, reset } = useForm<{
         name: string;
         description: string | null;
-        creator_id: string;
         creator_link: string | null;
         download_link: string | null;
+        gallery_id: string | null;
         lot_size: string;
         content_type: string;
         furnishing: string;
@@ -39,9 +37,9 @@ export default function CreateLot({ enums }: { enums: Enums }) {
     }>({
         name: "",
         description: "",
-        creator_id: "",
         creator_link: "",
         download_link: "",
+        gallery_id: "",
         lot_size: enums.lot_sizes[0] ?? "20x15",
         content_type: enums.content_types[0] ?? "NoCC",
         furnishing: enums.furnishings[0] ?? "Furnished",
@@ -98,124 +96,15 @@ export default function CreateLot({ enums }: { enums: Enums }) {
                 />
 
                 <form onSubmit={submit} className="space-y-6">
-                    <div className="grid gap-6 sm:grid-cols-2">
-                        <div className="sm:col-span-2">
-                            <TextField
-                                id="name"
-                                label="Name"
-                                value={data.name}
-                                onChange={(v) => setData("name", v)}
-                                placeholder="Willow Creek Cottage"
-                                error={errors.name as string | undefined}
-                            />
-                        </div>
-
-                        <div className="sm:col-span-2">
-                            <TextField
-                                id="description"
-                                label="Description"
-                                textarea
-                                value={data.description ?? ""}
-                                onChange={(v) => setData("description", v)}
-                                placeholder="Short description"
-                                error={errors.description as string | undefined}
-                            />
-                        </div>
-
-                        <TextField
-                            id="creator_id"
-                            label="Creator ID"
-                            value={data.creator_id}
-                            onChange={(v) => setData("creator_id", v)}
-                            placeholder="Your Sims gallery ID"
-                            error={errors.creator_id as string | undefined}
-                        />
-
-                        <TextField
-                            id="creator_link"
-                            label="Creator link"
-                            value={data.creator_link ?? ""}
-                            onChange={(v) => setData("creator_link", v)}
-                            placeholder="https://example.com/profile"
-                            error={errors.creator_link as string | undefined}
-                        />
-
-                        <TextField
-                            id="download_link"
-                            label="Download link"
-                            value={data.download_link ?? ""}
-                            onChange={(v) => setData("download_link", v)}
-                            placeholder="https://example.com/download.zip"
-                        />
-                        {errors.download_link && (
-                            <p className="mt-1 text-sm text-red-500">{errors.download_link}</p>
-                        )}
-
-                        <SelectField
-                            label="Lot size"
-                            value={data.lot_size}
-                            onValueChange={(v) => setData("lot_size", v)}
-                            options={enums.lot_sizes}
-                            error={errors.lot_size as string | undefined}
-                        />
-
-                        <SelectField
-                            label="Content type"
-                            value={data.content_type}
-                            onValueChange={(v) => setData("content_type", v)}
-                            options={enums.content_types}
-                            error={errors.content_type as string | undefined}
-                        />
-
-                        <SelectField
-                            label="Furnishing"
-                            value={data.furnishing}
-                            onValueChange={(v) => setData("furnishing", v)}
-                            options={enums.furnishings}
-                            error={errors.furnishing as string | undefined}
-                        />
-
-                        <SelectField
-                            label="Lot type"
-                            value={data.lot_type}
-                            onValueChange={(v) => setData("lot_type", v)}
-                            options={enums.lot_types}
-                            error={errors.lot_type as string | undefined}
-                        />
-
-                        <TextField
-                            id="bedrooms"
-                            label="Bedrooms"
-                            type="number"
-                            value={String(data.bedrooms)}
-                            onChange={(v) => setData("bedrooms", v)}
-                            placeholder={isCommunity ? "N/A for Community" : "e.g. 3"}
-                            disabled={isCommunity}
-                            error={errors.bedrooms as string | undefined}
-                        />
-
-                        <TextField
-                            id="bathrooms"
-                            label="Bathrooms"
-                            type="number"
-                            value={String(data.bathrooms)}
-                            onChange={(v) => setData("bathrooms", v)}
-                            placeholder={isCommunity ? "N/A for Community" : "e.g. 2"}
-                            disabled={isCommunity}
-                            error={errors.bathrooms as string | undefined}
-                        />
-
-                        <div className="sm:col-span-2">
-                            <ImageUpload
-                                label="Images — up to 10 files"
-                                helper="Tip: 16:9 looks best in cards and cover slots"
-                                onChange={onFilesChange}
-                                errors={errors}
-                                previews={previews}
-                                badSet={badSet}
-                            />
-                        </div>
-                    </div>
+                    <LotForm
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        enums={enums}
+                        previews={previews}
+                        onFilesChange={onFilesChange}
+                        badSet={badSet}
+                    />
 
                     <div className="flex items-center justify-end gap-3">
                         <Link href={route("dashboard")} className="inline-flex">

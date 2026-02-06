@@ -16,7 +16,7 @@ export default function MainLayout({ children }: Props) {
             <SiteHeader />
 
             <main className="flex-1">
-                <div className="container mx-auto max-w-screen-2xl py-6 px-4 md:px-8">
+                <div className="container mx-auto max-w-screen-2xl py-6 px-1 md:px-8">
                     {children}
                 </div>
             </main>

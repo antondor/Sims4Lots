@@ -6,21 +6,21 @@ import { route } from "ziggy-js";
 export function MainNav({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
     const { props: pageProps } = usePage();
 
-    // Извлекаем данные из общего стейта Inertia
-    const user = (pageProps as any)?.auth?.user;
-    const adminData = (pageProps as any)?.admin;
+    const auth = (pageProps as any).auth;
+    const user = auth?.user;
+    const adminData = (pageProps as any).admin;
 
-    const isAuthenticated = !!user;
-    const isAdmin = user?.is_admin;
+    const isAdmin = !!user?.is_admin;
     const pendingLotsCount = adminData?.pending_lots_count || 0;
 
     const links = [
         { title: "Dashboard", href: route("dashboard"), active: route().current("dashboard") },
     ];
 
-    const authLinks = [
-        { title: "My Lots", href: route("lots.mine"), active: route().current("lots.mine") },
-    ];
+    const authLinks = user ? [
+        { title: "My Lots", href: route("myLots"), active: route().current("myLots") },
+        { title: "Favourites", href: route("favourites.index", { user: user.id }), active: route().current("favourites.index") },
+    ] : [];
 
     return (
         <nav className={cn("flex items-center space-x-4 lg:space-x-6", className)} {...props}>
@@ -37,7 +37,7 @@ export function MainNav({ className, ...props }: React.HTMLAttributes<HTMLElemen
                 </Link>
             ))}
 
-            {isAuthenticated && authLinks.map((link) => (
+            {authLinks.map((link) => (
                 <Link
                     key={link.href}
                     href={link.href}

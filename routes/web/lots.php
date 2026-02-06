@@ -11,9 +11,9 @@ Route::prefix('lots')->name('lots.')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::prefix('lots')->name('lots.')->group(function () {
+    Route::get('myLots',   [LotController::class, 'myLots'])->middleware(['auth', 'verified'])->name('myLots');
+    Route::prefix('lots')->name('lots.')->middleware(['auth', 'verified'])->group(function () {
         Route::get('create', [LotController::class, 'create'])->name('create');
-        Route::get('mine',   [LotController::class, 'mine'])->name('mine');
         Route::post('',      [LotController::class, 'store'])->name('store');
         Route::get('{lot}/edit', [LotController::class, 'edit'])->whereNumber('lot')->name('edit');
         Route::patch('{lot}',    [LotController::class, 'update'])->whereNumber('lot')->name('update');

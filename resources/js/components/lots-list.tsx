@@ -7,6 +7,8 @@ import type { PaginatedData } from "@/types";
 import type { Lot } from "@/types/lots";
 import { DefaultPagination } from "@/components/default-pagination";
 import { route } from "ziggy-js";
+import { Plus } from "lucide-react";
+import { pickBy } from "lodash";
 
 type Props = {
     lots: PaginatedData<Lot>;
@@ -15,55 +17,90 @@ type Props = {
     showCreateButton?: boolean;
     title?: string;
     subtitle?: string;
+    filters?: any;
+    onFilterApply?: (filters: any) => void;
 };
 
 export const LotsList: React.FC<Props> = ({
-                                              lots,
-                                              showHeader = false,
-                                              showFilters = false,
-                                              showCreateButton = false,
-                                          }) => {
-    const handleApplyFilters = (filters: any) => {
+    lots,
+    showHeader = false,
+    showFilters = false,
+    showCreateButton = false,
+    filters,
+    onFilterApply,
+}) => {
+    const { props } = usePage();
+    const user = (props as any)?.auth?.user;
+
+    const currentFilters = filters || (props as any)?.filters || {};
+
+    const handleInternalApply = (newFilters: any) => {
+        if (onFilterApply) {
+            onFilterApply(newFilters);
+            return;
+        }
+
         const q: Record<string, any> = {
-            lotType: filters.lotType,
-            sizes: filters.sizes?.length ? filters.sizes : undefined,
-            contentTypes: filters.contentTypes?.length ? filters.contentTypes : undefined,
-            furnishings: filters.furnishings?.length ? filters.furnishings : undefined,
-            bedroomsMin: filters.bedroomsMin || undefined,
-            bedroomsMax: filters.bedroomsMax || undefined,
-            bathroomsMin: filters.bathroomsMin || undefined,
-            bathroomsMax: filters.bathroomsMax || undefined,
+            sort: newFilters.sort,
+            source: newFilters.source,
+            lotType: newFilters.lotType,
+            sizes: newFilters.sizes?.length ? newFilters.sizes : undefined,
+            contentTypes: newFilters.contentTypes?.length ? newFilters.contentTypes : undefined,
+            furnishings: newFilters.furnishings?.length ? newFilters.furnishings : undefined,
+            bedroomsMin: newFilters.bedroomsMin || undefined,
+            bedroomsMax: newFilters.bedroomsMax || undefined,
+            bathroomsMin: newFilters.bathroomsMin || undefined,
+            bathroomsMax: newFilters.bathroomsMax || undefined,
         };
 
-        router.get(route("dashboard"), q, {
+        const cleanQuery = pickBy(q);
+
+        router.get(route("dashboard"), cleanQuery as any, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
         });
     };
 
-    const { props } = usePage();
-    const user = (props as any)?.auth?.user;
-
     return (
         <>
             {showHeader && (
-                <div className="mb-5 flex w-full items-end justify-end gap-2 flex-wrap">
-                    {(showCreateButton || showFilters) && (
-                        <div className="flex flex-wrap items-center gap-2">
-                            {showCreateButton && user && (
-                                <Link href={route("lots.create")} className="inline-flex">
-                                    <Button size="sm">Create lot</Button>
+                <div className="mb-6 flex w-full items-center justify-between gap-4 flex-wrap">
+                    <div className="hidden md:block"></div>
+
+                    <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2">
+                        {showFilters && (
+                            <LotFilters
+                                onApply={handleInternalApply}
+                                initialFilters={currentFilters}
+                            />
+                        )}
+
+                        {showCreateButton && user && (
+                            <Button asChild size="sm">
+                                <Link href={route("lots.create")}>
+                                    <Plus className="h-4 w-4" />
+                                    Create lot
                                 </Link>
-                            )}
-                            {showFilters && <LotFilters onApply={handleApplyFilters} />}
-                        </div>
-                    )}
+                            </Button>
+                        )}
+                    </div>
                 </div>
             )}
 
             {lots.data.length === 0 ? (
-                <p className="text-center">No lots created yet. Be the first to create one!</p>
+                <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
+                    <p className="text-muted-foreground">No lots found matching your criteria.</p>
+                    {Object.keys(currentFilters).length > 0 && (
+                        <Button
+                            variant="link"
+                            onClick={() => router.get(route("dashboard"))}
+                            className="mt-2"
+                        >
+                            Clear all filters
+                        </Button>
+                    )}
+                </div>
             ) : (
                 <>
                     <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3">
@@ -74,7 +111,7 @@ export const LotsList: React.FC<Props> = ({
                         ))}
                     </div>
 
-                    <div className="mt-6">
+                    <div className="mt-8">
                         <DefaultPagination data={lots} />
                     </div>
                 </>

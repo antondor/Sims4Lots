@@ -64,9 +64,10 @@ export default function Register() {
                                     onChange={(e) => setData("email", e.target.value)}
                                 />
                                 {errors.email && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {errors.email}
-                                    </p>
+                                    <p
+                                        className="mt-1 text-sm text-red-500"
+                                        dangerouslySetInnerHTML={{ __html: errors.email }}
+                                    />
                                 )}
                             </div>
 

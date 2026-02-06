@@ -10,7 +10,7 @@ import { AlertCircle, ShieldX } from "lucide-react";
 import { LotShowHeader } from "@/components/lots/lot-show-header";
 import { LotImagesCard } from "@/components/lots/lot-images-card";
 import { LotMainInfo } from "@/components/lots/lot-main-info";
-import {LotDetailsAside} from "@/components/lots/lot-details-aside";
+import { LotDetailsAside } from "@/components/lots/lot-details-aside";
 
 type PageProps = {
     lot: Lot;
@@ -67,9 +67,9 @@ export default function LotShow(props: PageProps) {
         <MainLayout breadcrumbs={breadcrumbs}>
             <Head title={lot.name} />
 
-            <div className="container mx-auto max-w-screen-xl px-4">
+            <div className="container mx-auto max-w-screen-xl px-4 py-4 md:py-8">
                 {showStatusAlert && (
-                    <Alert variant={isPending ? "default" : "destructive"} className="mb-4">
+                    <Alert variant={isPending ? "default" : "destructive"} className="mb-6">
                         {isPending ? (
                             <AlertCircle className="h-4 w-4" />
                         ) : (
@@ -91,28 +91,37 @@ export default function LotShow(props: PageProps) {
                     </Alert>
                 )}
 
-                <LotShowHeader
-                    lot={lot}
-                    isOwner={isOwner}
-                    canModerate={canModerate}
-                    isAdmin={isAdmin}
-                    isPendingForCurrentUser={isPendingForCurrentUser}
-                    onApprove={approve}
-                    onReject={reject}
-                    initialLiked={initialLiked}
-                    initialCount={initialCount}
-                />
+                <div className="space-y-6 md:space-y-8">
+                    <LotShowHeader
+                        lot={lot}
+                        isOwner={isOwner}
+                        canModerate={canModerate}
+                        isAdmin={isAdmin}
+                        isPendingForCurrentUser={isPendingForCurrentUser}
+                        onApprove={approve}
+                        onReject={reject}
+                        initialLiked={initialLiked}
+                        initialCount={initialCount}
+                    />
 
-                <LotImagesCard
-                    lotName={lot.name}
-                    images={images}
-                />
-
-                <div className="grid gap-6 lg:grid-cols-3">
-                    <div className="space-y-6 lg:col-span-2">
-                        <LotMainInfo lot={lot} />
+                    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted border shadow-sm">
+                        <LotImagesCard
+                            lotName={lot.name}
+                            images={images}
+                        />
                     </div>
-                    <LotDetailsAside lot={lot} />
+
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+                        <div className="order-2 space-y-6 lg:order-1 lg:col-span-2">
+                            <LotMainInfo lot={lot} />
+                        </div>
+
+                        <div className="order-1 lg:order-2 lg:col-span-1">
+                            <div className="sticky top-20 space-y-6">
+                                <LotDetailsAside lot={lot} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </MainLayout>

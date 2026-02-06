@@ -21,9 +21,9 @@ export interface Lot {
     user_id: number;
     name: string;
     description: string | null;
-    creator_id: string;
     creator_link: string | null;
     download_link?: string | null;
+    gallery_id?: string | null;
     lot_size: LotSize;
     content_type: ContentType;
     furnishing: Furnishing;
@@ -65,9 +65,9 @@ export type Enums = {
 export type FormType = {
     name: string;
     description: string | null;
-    creator_id: string | null;
     creator_link: string | null;
     download_link: string | null;
+    gallery_id: string | null;
     lot_size: LotSize | "";
     content_type: ContentType | "";
     furnishing: Furnishing | "";

@@ -13,7 +13,7 @@ export function SelectField({
     label: string;
     value: string;
     onValueChange: (v: string) => void;
-    options: string[];
+    options: readonly string[];
     error?: string;
     placeholder?: string;
 }) {

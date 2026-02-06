@@ -1,16 +1,42 @@
-import React from "react";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { type PaginatedData } from "@/types";
 import { LotsList } from "@/components/lots-list";
 import type { Lot } from "@/types/lots";
 import MainLayout from "@/layouts/main-layout";
+import { pickBy } from "lodash";
+import { route } from "ziggy-js";
 
-export default function Dashboard({ lots }: { lots: PaginatedData<Lot> }) {
+type Props = {
+    lots: PaginatedData<Lot>;
+    filters: any;
+};
+
+export default function Dashboard({ lots, filters }: Props) {
+    const onFilterApply = (newFilters: any) => {
+        const cleanFilters = pickBy(newFilters);
+
+        router.get(
+            route("dashboard"),
+            cleanFilters,
+            {
+                preserveState: true,
+                replace: true,
+            }
+        );
+    };
+
     return (
         <>
             <Head title="Dashboard" />
             <MainLayout>
-                <LotsList lots={lots} showHeader showFilters showCreateButton />
+                <LotsList
+                    lots={lots}
+                    showHeader
+                    showFilters
+                    showCreateButton
+                    filters={filters}
+                    onFilterApply={onFilterApply}
+                />
             </MainLayout>
         </>
     );

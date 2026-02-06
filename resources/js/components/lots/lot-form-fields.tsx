@@ -42,14 +42,14 @@ export function LotFormFields({ data, setData, enums, errors }: Props) {
             </div>
 
             <div>
-                <Label htmlFor="creator_id" className="mb-2">Creator ID</Label>
+                <Label htmlFor="gallery_id" className="mb-2">Creator ID</Label>
                 <Input
-                    id="creator_id"
-                    value={data.creator_id ?? ""}
-                    onChange={(e) => setData("creator_id", e.target.value)}
+                    id="gallery_id"
+                    value={data.gallery_id ?? ""}
+                    onChange={(e) => setData("gallery_id", e.target.value)}
                     placeholder="1234567"
                 />
-                {errors.creator_id && <p className="mt-1 text-sm text-red-500">{errors.creator_id}</p>}
+                {errors.gallery_id && <p className="mt-1 text-sm text-red-500">{errors.gallery_id}</p>}
             </div>
 
             <div>

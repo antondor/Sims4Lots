@@ -4,6 +4,8 @@ import { Link } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import { useDebounced } from "@/hooks/use-debounced";
 import { useAbortableFetch } from "@/hooks/use-abortable-fetch";
+// Добавляем иконку
+import { ShieldCheck } from "lucide-react";
 
 type LotResult = {
     id: number;
@@ -16,6 +18,8 @@ type UserResult = {
     name: string;
     avatar_url: string;
     is_online: boolean;
+    // Добавляем поле в тип
+    is_admin?: number | boolean;
 };
 
 type SearchData = {
@@ -87,7 +91,7 @@ export function SiteHeaderSearch() {
                 onChange={onChange}
                 onFocus={() => q.trim().length >= 2 && hasResults && setOpen(true)}
                 onBlur={onBlur}
-                placeholder="Search lots or users..."
+                placeholder="Search..."
                 className="w-full"
             />
 
@@ -122,7 +126,12 @@ export function SiteHeaderSearch() {
                                                         className="h-8 w-8 rounded-full object-cover border"
                                                     />
                                                     <div className="flex flex-col">
-                                                        <span className="font-medium leading-none">{user.name}</span>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="font-medium leading-none">{user.name}</span>
+                                                            {user.is_admin && (
+                                                                <ShieldCheck className="h-3 w-3 text-red-500" />
+                                                            )}
+                                                        </div>
                                                         {user.is_online && <span className="text-[10px] text-green-500">Online</span>}
                                                     </div>
                                                 </Link>

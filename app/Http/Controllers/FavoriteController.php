@@ -12,27 +12,27 @@ class FavoriteController extends Controller
 {
     public function index(Request $request, User $user)
     {
+        $targetUser = $user->exists ? $user : $request->user();
+        abort_if(! $targetUser, 404);
+
         $viewerId = optional($request->user())->id;
 
-        $lots = Lot::query()
-            ->join('favorites', 'favorites.lot_id', '=', 'lots.id')
-            ->where('favorites.user_id', $user->id)
-            ->select('lots.*')
+        $lots = $targetUser->favoriteLots()
             ->withCount(['favoritedBy as favorites_count'])
             ->with(['coverImage:id,lot_id,filename,position', 'user:id,name,avatar'])
-            ->when($viewerId, fn ($q) => $q->withFavorited($viewerId))
-            ->orderByDesc('favorites.created_at')
+            ->when($viewerId, fn($q) => $q->withFavorited($viewerId))
+            ->orderByPivot('created_at', 'desc')
             ->paginate(12)
             ->withQueryString();
 
         return Inertia::render('favourites/index', [
-            'lots'    => $lots,
-            'owner'   => [
-                'id'         => $user->id,
-                'name'       => $user->name,
-                'avatar_url' => $user->avatar_url,
+            'lots'  => $lots,
+            'owner' => [
+                'id'         => $targetUser->id,
+                'name'       => $targetUser->name,
+                'avatar_url' => $targetUser->avatar_url,
             ],
-            'isOwner' => $viewerId !== null && $viewerId === $user->id,
+            'isOwner' => $viewerId === $targetUser->id,
         ]);
     }
 

@@ -7,9 +7,7 @@ use Inertia\Inertia;
 use App\Models\LotImage;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Gate;
 use Intervention\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
@@ -31,75 +29,60 @@ class LotController extends Controller
 
     public function index(Request $request)
     {
-        $sizes        = (array) $request->query('sizes', []);
-        $contentTypes = (array) $request->query('contentTypes', []);
-        $furnishings  = (array) $request->query('furnishings', []);
-        $lotType      = $request->query('lotType');
-
-        $bMin  = $request->filled('bedroomsMin')  ? (int)$request->bedroomsMin  : null;
-        $bMax  = $request->filled('bedroomsMax')  ? (int)$request->bedroomsMax  : null;
-        $baMin = $request->filled('bathroomsMin') ? (int)$request->bathroomsMin : null;
-        $baMax = $request->filled('bathroomsMax') ? (int)$request->bathroomsMax : null;
+        $filters = [
+            'sizes'        => (array) $request->query('sizes', []),
+            'contentTypes' => (array) $request->query('contentTypes', []),
+            'furnishings'  => (array) $request->query('furnishings', []),
+            'lotType'      => $request->query('lotType'),
+            'bMin'         => $request->filled('bedroomsMin') ? (int)$request->bedroomsMin : null,
+            'bMax'         => $request->filled('bedroomsMax') ? (int)$request->bedroomsMax : null,
+            'baMin'        => $request->filled('bathroomsMin') ? (int)$request->bathroomsMin : null,
+            'baMax'        => $request->filled('bathroomsMax') ? (int)$request->bathroomsMax : null,
+            'sort'         => $request->query('sort', 'newest'),
+            'source'       => $request->query('source'),
+        ];
 
         $query = Lot::query()
             ->confirmed()
             ->withCount(['favoritedBy as favorites_count'])
-            ->orderByRaw('CASE WHEN id = ? THEN 0 ELSE 1 END', [1])
-            ->orderByDesc('favorites_count')
-            ->orderBy('updated_at', 'asc')
-            ->orderBy('id','asc')
-            ->with(['images','user']);
+            ->with(['images', 'user']);
 
-        $query->when(!empty($sizes), fn($q) => $q->whereIn('lot_size', $sizes));
-        $query->when(!empty($contentTypes), fn($q) => $q->whereIn('content_type', $contentTypes));
-        $query->when(!empty($furnishings), fn($q) => $q->whereIn('furnishing', $furnishings));
-        $query->when(in_array($lotType, ['Residential','Community']), fn($q) => $q->where('lot_type', $lotType));
+        $query->when($filters['sizes'], fn($q) => $q->whereIn('lot_size', $filters['sizes']));
+        $query->when($filters['contentTypes'], fn($q) => $q->whereIn('content_type', $filters['contentTypes']));
+        $query->when($filters['furnishings'], fn($q) => $q->whereIn('furnishing', $filters['furnishings']));
 
-        if ($lotType === 'Residential' || $lotType === null) {
-            if (!is_null($bMin) && !is_null($bMax)) $query->whereBetween('bedrooms', [$bMin, $bMax]);
-            elseif (!is_null($bMin)) $query->where('bedrooms', '>=', $bMin);
-            elseif (!is_null($bMax)) $query->where('bedrooms', '<=', $bMax);
+        $query->when(in_array($filters['lotType'], ['Residential', 'Community']), fn($q) => $q->where('lot_type', $filters['lotType']));
 
-            if (!is_null($baMin) && !is_null($baMax)) $query->whereBetween('bathrooms', [$baMin, $baMax]);
-            elseif (!is_null($baMin)) $query->where('bathrooms', '>=', $baMin);
-            elseif (!is_null($baMax)) $query->where('bathrooms', '<=', $baMax);
+        $query->when($filters['source'], function ($q, $source) {
+            if ($source === 'file') {
+                $q->whereNotNull('download_link')->where('download_link', '!=', '');
+            } elseif ($source === 'gallery') {
+                $q->whereNotNull('gallery_id')->where('gallery_id', '!=', '');
+            }
+        });
+
+        if (in_array($filters['lotType'], ['Residential', null])) {
+            if ($filters['bMin']) $query->where('bedrooms', '>=', $filters['bMin']);
+            if ($filters['bMax']) $query->where('bedrooms', '<=', $filters['bMax']);
+
+            if ($filters['baMin']) $query->where('bathrooms', '>=', $filters['baMin']);
+            if ($filters['baMax']) $query->where('bathrooms', '<=', $filters['baMax']);
         }
+
+        match ($filters['sort']) {
+            'popular' => $query->orderByDesc('favorites_count')->orderByDesc('created_at'),
+            'oldest'  => $query->orderBy('created_at', 'asc'),
+            default   => $query->orderByDesc('created_at'),
+        };
+
+        $query->orderByDesc('id');
 
         $query = $this->attachFavFlag($query);
 
         return Inertia::render('dashboard', [
             'lots' => $query->paginate(9)->withQueryString(),
+            'filters' => $filters,
         ]);
-    }
-
-    public function search(Request $request)
-    {
-        $q = trim((string) $request->query('q', ''));
-        if ($q === '' || mb_strlen($q) < 2) {
-            return response()->json(['data' => []]);
-        }
-
-        $lots = Lot::query()
-            ->select(['id','name','updated_at'])
-            ->where('name', 'like', "%{$q}%")
-            ->where('status', 'like', "confirmed")
-            ->with(['images' => fn ($q) => $q->orderBy('position')->limit(1)])
-            ->orderByDesc('updated_at')
-            ->limit(8)
-            ->get();
-
-        $data = $lots->map(function (Lot $lot) {
-            $cover    = $lot->images->first();
-            $coverUrl = $cover?->url ?? asset('images/lot-placeholder.jpg');
-
-            return [
-                'id'        => $lot->id,
-                'name'      => $lot->name,
-                'cover_url' => $coverUrl,
-            ];
-        });
-
-        return response()->json(['data' => $data]);
     }
 
     public function view(Lot $lot)
@@ -186,7 +169,7 @@ class LotController extends Controller
         return redirect()->route('lots.view', $lot->id)->with('success', 'Lot updated.');
     }
 
-    public function mine()
+    public function myLots()
     {
         $userId = request()->user()->id;
 
@@ -207,7 +190,7 @@ class LotController extends Controller
             ->where('status', 'pending')
             ->count();
 
-        return Inertia::render('lots/mine', [
+        return Inertia::render('lots/myLots', [
             'lots'         => $lots,
             'pendingCount' => $pendingCount,
         ]);
@@ -245,7 +228,7 @@ class LotController extends Controller
         }
 
         return redirect()
-            ->route('lots.mine')
+            ->route('myLots')
             ->with('info', 'Your lot was submitted for review');
     }
 
@@ -305,7 +288,7 @@ class LotController extends Controller
         $lot->images()->delete();
         $lot->delete();
 
-        return redirect()->route('lots.mine')->with('success', 'Lot deleted.');
+        return redirect()->route('myLots')->with('success', 'Lot deleted.');
     }
 
     public function destroyImage(Lot $lot, LotImage $image)
@@ -361,17 +344,17 @@ class LotController extends Controller
     private function rules(bool $isNew = true): array
     {
         return [
-            'name'          => ['required','string','max:255'],
-            'description'   => ['nullable','string','max:65535'],
-            'creator_id'    => ['nullable','string','max:255'],
-            'creator_link'  => ['nullable','url','max:255'],
-            'download_link' => ['nullable','url','max:255'],
-            'lot_size'      => ['required','in:'.implode(',', self::LOT_SIZES)],
-            'content_type'  => ['required','in:'.implode(',', self::CONTENT_TYPES)],
-            'furnishing'    => ['required','in:'.implode(',', self::FURNISHINGS)],
-            'lot_type'      => ['required','in:'.implode(',', self::LOT_TYPES)],
-            'bedrooms'      => ['nullable','integer','min:0','max:50'],
-            'bathrooms'     => ['nullable','integer','min:0','max:50'],
+            'name'          => ['required', 'string', 'max:255'],
+            'description'   => ['nullable', 'string', 'max:65535'],
+            'gallery_id'    => ['required_without:download_link', 'nullable', 'string', 'max:255'],
+            'download_link' => ['required_without:gallery_id', 'nullable', 'url', 'max:255'],
+            'creator_link'  => ['nullable', 'url', 'max:255'],
+            'lot_size'      => ['required', 'in:' . implode(',', self::LOT_SIZES)],
+            'content_type'  => ['required', 'in:' . implode(',', self::CONTENT_TYPES)],
+            'furnishing'    => ['required', 'in:' . implode(',', self::FURNISHINGS)],
+            'lot_type'      => ['required', 'in:' . implode(',', self::LOT_TYPES)],
+            'bedrooms'      => ['nullable', 'integer', 'min:0', 'max:50'],
+            'bathrooms'     => ['nullable', 'integer', 'min:0', 'max:50'],
             'images'        => [$isNew ? 'required' : 'nullable', 'array', 'min:1', 'max:10'],
             'images.*'      => ['image', 'mimes:jpg,jpeg,png', 'max:5120'],
         ];
