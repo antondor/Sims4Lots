@@ -30,7 +30,13 @@ export function LotCard({ lot }: Props) {
     const userUrl = lot.user?.id ? route("users.show", { user: lot.user.id }) : null;
 
     const cover = lot.cover_image ?? (lot.images?.[0] ?? null);
-    const coverUrl = cover?.url ? (resolveSrc(cover.url) ?? IMAGE_PLACEHOLDER) : IMAGE_PLACEHOLDER;
+
+    let coverUrl = IMAGE_PLACEHOLDER;
+
+    if (cover?.url) {
+        const thumbUrl = cover.url.replace(/(\.[^.]+)$/, '_thumb$1');
+        coverUrl = resolveSrc(thumbUrl) ?? IMAGE_PLACEHOLDER;
+    }
 
     const isCommunity = lot.lot_type === "Community";
     const initialLiked = Boolean((lot as any).is_favorited ?? (lot as any).isFavorited);

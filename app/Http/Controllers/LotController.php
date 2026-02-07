@@ -409,7 +409,8 @@ class LotController extends Controller
             Storage::disk('s3')->putFileAs(
                 $dirInS3,
                 new File($localThumbPath),
-                $thumbName
+                $thumbName,
+                ['CacheControl' => 'max-age=31536000', 'visibility' => 'public']
             );
 
             @unlink($localThumbPath);

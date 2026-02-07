@@ -9,8 +9,10 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Intervention\Image\ImageManager;
 use App\Notifications\VerifyNewEmail;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Gd\Driver;
 use App\Notifications\EmailChangeVerified;
 use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Support\Facades\Notification;
@@ -67,7 +69,7 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $ext  = $file->getClientOriginalExtension();
+            $ext  = 'webp';
             $name = Str::uuid() . '.' . $ext;
             $dir  = "avatars/{$user->id}";
 
@@ -79,7 +81,15 @@ class ProfileController extends Controller
                 }
             }
 
-            Storage::disk('s3')->putFileAs($dir, $file, $name);
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file)
+                ->cover(300, 300)
+                ->toWebp(quality: 80);
+            Storage::disk('s3')->put("$dir/$name", (string) $image, [
+                'visibility' => 'public',
+                'CacheControl' => 'max-age=31536000'
+            ]);
+
             $user->avatar = $name;
         }
 

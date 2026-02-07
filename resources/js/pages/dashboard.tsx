@@ -27,7 +27,13 @@ export default function Dashboard({ lots, filters }: Props) {
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head>
+                <title>Dashboard</title>
+                <meta
+                    name="description"
+                    content="Discover and download the best Sims 4 lots. Filter by size, type, furnishing and more. High quality residential and community builds."
+                />
+            </Head>
             <MainLayout>
                 <LotsList
                     lots={lots}
