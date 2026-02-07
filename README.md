@@ -1,4 +1,4 @@
-# 🏠 SimsLots Hub
+SimsLots Hub
 
 <p align="center">
   <img src="https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel">
@@ -13,21 +13,21 @@ SimsLots Hub is a Full-Stack Single Page Application (SPA) built with the monoli
 
 ---
 
-## ✨ Key Features
+Key Features
 
-### 🏗️ For Users
+For Users
 * **Smart Search & Filtering:** Filter lots by size (e.g., 64x64), type (Residential/Community), furnishing status, and CC (Custom Content).
 * **Responsive UI:** Fully responsive design built with **Shadcn UI** and Tailwind CSS.
 * **User Profiles:** Custom avatars, biography, and portfolio links.
 * **Favorites System:** Save lots for later.
 * **Secure Account Management:** Email verification flow with "change requests" (old email stays active until the new one is verified).
 
-### 🛡️ For Admins
+For Admins
 * **Moderation Queue:** Review pending submissions before they go live.
 * **Approval/Rejection Workflow:** Approve lots or reject them with a custom reason sent via email notifications.
 * **Dashboard:** Quick overview of platform statistics.
 
-### 🚀 Technical Highlights
+Technical Highlights
 * **Image Optimization:** Automatic generation of **WebP thumbnails** and resizing using *Intervention Image* to ensure 90+ Google Lighthouse performance scores.
 * **Cloud Storage:** Integration with **Cloudflare R2 (S3)** for scalable media storage.
 * **Lazy Loading:** Implemented native lazy loading with fetch priority management for LCP optimization.
@@ -35,7 +35,7 @@ SimsLots Hub is a Full-Stack Single Page Application (SPA) built with the monoli
 
 ---
 
-## 🛠️ Tech Stack
+Tech Stack
 
 | Category | Technology |
 |----------|------------|
@@ -44,23 +44,6 @@ SimsLots Hub is a Full-Stack Single Page Application (SPA) built with the monoli
 | **Styling** | Tailwind CSS, Shadcn UI, Lucide Icons |
 | **Storage** | Cloudflare R2 (AWS S3 Compatible) |
 | **Tools** | Vite, Docker (Sail), Supervisor |
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-  <img src="docs/dashboard-preview.jpg" alt="Dashboard Screenshot" width="100%" />
-</div>
-
-<br>
-
-<div align="center">
-  <img src="docs/lot-view.jpg" alt="Lot View" width="48%" />
-  <img src="docs/profile-view.jpg" alt="Profile View" width="48%" />
-</div>
-
----
 
 ## ⚙️ Installation (Local Development)
 
