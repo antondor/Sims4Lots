@@ -49,5 +49,24 @@ Tech Stack
 
 1. **Clone the repository**
    ```bash
-   git clone [https://github.com/your-username/simslots-hub.git](https://github.com/your-username/simslots-hub.git)
-   cd simslots-hub
+   git clone [https://github.com/antondor/Sims4Lots.git](https://github.com/antondor/Sims4Lots.git)
+   cd Sims4Lots
+
+2. **Install dependencies**
+    ```bash
+    composer install
+    npm install
+    
+3. **Environment Setup**
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+
+4. **Run Migrations**
+    ```bash
+    php artisan migrate
+
+5. **Start Development Server**
+    ```bash
+    npm run dev
+    php artisan serve
