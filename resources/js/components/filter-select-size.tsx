@@ -17,7 +17,7 @@ export const FilterSelectSize: React.FC<Props> = ({ options = DEFAULT_OPTIONS, v
 
     return (
         <div className={className}>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 justify-center">
                 {options.map((opt) => {
                     const active = selected.includes(opt);
                     return (

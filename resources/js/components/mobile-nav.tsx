@@ -12,17 +12,21 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Menu, LayoutDashboard, Home, Folder } from "lucide-react";
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import { cn } from "@/lib/utils";
 import { route } from "ziggy-js";
 
 export function MobileNav() {
     const [open, setOpen] = useState(false);
 
+    const { props: pageProps } = usePage();
+    const auth = (pageProps as any).auth;
+    const user = auth?.user;
+
     return (
         <Drawer direction="left" open={open} onOpenChange={setOpen}>
             <DrawerTrigger asChild>
-                <Button variant="ghost" className="mr-2 px-0 md:hidden">
+                <Button variant="ghost" className="px-0 md:hidden">
                     <Menu className="h-6 w-6" />
                 </Button>
             </DrawerTrigger>
@@ -54,6 +58,11 @@ export function MobileNav() {
                         <MobileLink href={route("myLots")} onOpenChange={setOpen}>
                             <Folder className="mr-2 h-5 w-5" />
                             My Lots
+                        </MobileLink>
+
+                        <MobileLink href={route("favourites.index", { user: user.id })} onOpenChange={setOpen}>
+                            <Folder className="mr-2 h-5 w-5" />
+                            Favourites
                         </MobileLink>
                     </div>
                 </div>

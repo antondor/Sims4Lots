@@ -68,7 +68,7 @@ export const LotsList: React.FC<Props> = ({
         <>
             {showHeader && (
                 <div className="mb-6 flex w-full items-center justify-between gap-4 flex-wrap">
-                    <div className="hidden md:block">
+                    <div className="w-full md:w-auto">
                         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                             {title || "Dashboard"}
                         </h1>
@@ -79,18 +79,20 @@ export const LotsList: React.FC<Props> = ({
                         )}
                     </div>
 
-                    <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2">
+                    <div className="flex w-full md:w-auto items-center justify-end gap-2">
                         {showFilters && (
-                            <LotFilters
-                                onApply={handleInternalApply}
-                                initialFilters={currentFilters}
-                            />
+                            <div className={showCreateButton && user ? "flex-1 md:w-auto [&_button]:w-full" : "w-full md:w-auto [&_button]:w-full"}>
+                                <LotFilters
+                                    onApply={handleInternalApply}
+                                    initialFilters={currentFilters}
+                                />
+                            </div>
                         )}
 
                         {showCreateButton && user && (
-                            <Button asChild size="sm">
+                            <Button asChild size="sm" className="w-[75%] md:w-auto justify-center">
                                 <Link href={route("lots.create")}>
-                                    <Plus className="h-4 w-4" />
+                                    <Plus className="h-4 w-4 mr-2" />
                                     Create new
                                 </Link>
                             </Button>

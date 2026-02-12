@@ -224,7 +224,7 @@ export const LotFilters: React.FC<LotFiltersProps> = ({ onApply, initialFilters 
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label className="text-xs uppercase text-muted-foreground">Details</Label>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 justify-center">
                             {["CC", "NoCC"].map(val => (
                                 <ToggleChip
                                     key={val}
