@@ -87,7 +87,7 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
 
     return (
         <MainLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit: ${lot.name}`} />
+            <Head title={`${lot.name} • edit`} />
 
             <div className="container mx-auto max-w-screen-md px-4">
                 <PageHeader

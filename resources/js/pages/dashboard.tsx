@@ -40,6 +40,8 @@ export default function Dashboard({ lots, filters }: Props) {
                     showHeader
                     showFilters
                     showCreateButton
+                    title="Dashboard"
+                    subtitle="Discover unique builds and inspire your next gameplay"
                     filters={filters}
                     onFilterApply={onFilterApply}
                 />

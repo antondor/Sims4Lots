@@ -26,6 +26,8 @@ export const LotsList: React.FC<Props> = ({
     showHeader = false,
     showFilters = false,
     showCreateButton = false,
+    title,
+    subtitle,
     filters,
     onFilterApply,
 }) => {
@@ -66,7 +68,16 @@ export const LotsList: React.FC<Props> = ({
         <>
             {showHeader && (
                 <div className="mb-6 flex w-full items-center justify-between gap-4 flex-wrap">
-                    <div className="hidden md:block"></div>
+                    <div className="hidden md:block">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                            {title || "Dashboard"}
+                        </h1>
+                        {subtitle && (
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                {subtitle}
+                            </p>
+                        )}
+                    </div>
 
                     <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2">
                         {showFilters && (
@@ -80,7 +91,7 @@ export const LotsList: React.FC<Props> = ({
                             <Button asChild size="sm">
                                 <Link href={route("lots.create")}>
                                     <Plus className="h-4 w-4" />
-                                    Create lot
+                                    Create new
                                 </Link>
                             </Button>
                         )}

@@ -30,11 +30,25 @@ export default function FavouritesIndex({ lots, owner, isOwner }: Props) {
     ];
 
     const title = isOwner ? "Favourites" : `${owner.name} — Favourites`;
+    const displayTitle = isOwner ? "Favourites" : `${owner.name}'s favourites`;
 
     return (
         <>
             <Head title={title} />
             <MainLayout breadcrumbs={breadcrumbs}>
+                
+                <div className="mb-8">
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                        {displayTitle}
+                    </h1>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        {isOwner 
+                            ? "Your personal collection of saved lots for quick access"
+                            : `Browse the collection of lots saved by ${owner.name}`
+                        }
+                    </p>
+                </div>
+
                 {!hasLots ? (
                     <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center animate-in fade-in-50">
                         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">

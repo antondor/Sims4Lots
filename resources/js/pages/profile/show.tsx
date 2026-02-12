@@ -49,7 +49,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
 
     return (
         <MainLayout breadcrumbs={breadcrumbs}>
-            <Head title={`${user.name} — Profile`} />
+            <Head title={`${user.name} • profile`} />
 
             <div className="container mx-auto px-4 py-6 md:py-8">
                 <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8 mb-10">
@@ -112,21 +112,19 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                             )}
 
                             {isOwner && (
-                                <>
-                                    <Link href={route("myLots")}>
-                                        <Button variant="ghost" size="sm" className="gap-2">
-                                            <Folder className="h-4 w-4" />
-                                            My Lots
-                                        </Button>
-                                    </Link>
-                                    <Link href={route("favourites.index", { user: user.id })}>
-                                        <Button variant="ghost" size="sm" className="gap-2">
-                                            <Heart className="h-4 w-4" />
-                                            Favourites
-                                        </Button>
-                                    </Link>
-                                </>
+                                <Link href={route("myLots")}>
+                                    <Button variant="ghost" size="sm" className="gap-2">
+                                        <Folder className="h-4 w-4" />
+                                        My Lots
+                                    </Button>
+                                </Link>
                             )}
+                            <Link href={route("favourites.index", { user: user.id })}>
+                                <Button variant="ghost" size="sm" className="gap-2">
+                                    <Heart className="h-4 w-4" />
+                                    {isOwner ? "My Favourites" : "Favourites"}
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </div>

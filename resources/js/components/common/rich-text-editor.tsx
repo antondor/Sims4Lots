@@ -46,7 +46,6 @@ export function RichTextEditor({ value, onChange, className, error }: Props) {
         },
     })
 
-    // Состояние для управления Popover и урлом
     const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false)
     const [linkUrl, setLinkUrl] = useState('')
 
@@ -60,31 +59,26 @@ export function RichTextEditor({ value, onChange, className, error }: Props) {
         return null
     }
 
-    // Открытие попапа: берем текущий URL ссылки, если есть
     const openLinkPopover = () => {
         const previousUrl = editor.getAttributes('link').href
         setLinkUrl(previousUrl || '')
         setIsLinkPopoverOpen(true)
     }
 
-    // Сохранение ссылки
     const saveLink = () => {
         if (linkUrl === '') {
             editor.chain().focus().extendMarkRange('link').unsetLink().run()
         } else {
-            // Tiptap сам добавит http, если настроить, но можно и вручную проверить
             editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run()
         }
         setIsLinkPopoverOpen(false)
     }
 
-    // Удаление ссылки
     const removeLink = () => {
         editor.chain().focus().unsetLink().run()
         setIsLinkPopoverOpen(false)
     }
 
-    // Обработка нажатия Enter в инпуте
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault()
@@ -116,7 +110,6 @@ export function RichTextEditor({ value, onChange, className, error }: Props) {
                 
                 <Separator orientation="vertical" className="mx-1 h-5" />
                 
-                {/* --- Popover для ссылок --- */}
                 <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
                     <PopoverTrigger asChild>
                         <Button
@@ -166,7 +159,6 @@ export function RichTextEditor({ value, onChange, className, error }: Props) {
                         </div>
                     </PopoverContent>
                 </Popover>
-                {/* ------------------------- */}
                 
                 <Separator orientation="vertical" className="mx-1 h-5" />
 

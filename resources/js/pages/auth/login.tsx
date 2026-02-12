@@ -88,7 +88,13 @@ export default function Login() {
                                         Remember me
                                     </Label>
                                 </div>
-                                {/* если потом добавишь "Forgot password?" — место уже есть */}
+                                
+                                <Link
+                                    href={route('password.request')}
+                                    className="text-xs sm:text-sm font-medium text-primary underline-offset-4 hover:underline"
+                                >
+                                    Forgot password?
+                                </Link>
                             </div>
 
                             <Button

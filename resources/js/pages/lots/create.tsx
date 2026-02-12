@@ -85,7 +85,7 @@ export default function CreateLot({ enums }: { enums: Enums }) {
 
     return (
         <MainLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create lot" />
+            <Head title="Create new" />
             <div className="container mx-auto max-w-screen-md px-4">
                 <PageHeader
                     title="Create new lot"
