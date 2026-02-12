@@ -3,6 +3,8 @@ import { TextField } from "@/components/upload-form/text-field";
 import { SelectField } from "@/components/upload-form/select-field";
 import { ImageUpload } from "@/components/upload-form/image-upload";
 import { DownloadSourceSelector } from "@/components/lots/download-source-selector";
+import { RichTextEditor } from "@/components/common/rich-text-editor";
+import { Label } from "@/components/ui/label";
 
 type Enums = {
     lot_sizes: readonly string[];
@@ -60,16 +62,18 @@ export function LotForm({ data, setData, errors, enums, previews, onFilesChange,
                 />
             </div>
 
-            <div className="sm:col-span-2">
-                <TextField
-                    id="description"
-                    label="Description"
-                    textarea
+            <div className="sm:col-span-2 space-y-1.5">
+                <Label htmlFor="description">Description</Label>
+                <RichTextEditor
                     value={data.description ?? ""}
                     onChange={(v) => setData("description", v)}
-                    placeholder="Short description"
+                    placeholder="Describe your lot..."
                     error={errors.description}
+                    className="min-h-[200px]"
                 />
+                {errors.description && (
+                    <p className="text-xs text-red-600">{errors.description}</p>
+                )}
             </div>
 
             <div className="sm:col-span-2">

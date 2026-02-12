@@ -163,7 +163,17 @@ class ProfileController extends Controller
             ->confirmed()
             ->count();
 
-        $favouritesCount = $profileOwner->favoriteLots()->count();
+        $topLot = Lot::query()
+            ->where('user_id', $profileOwner->id)
+            ->confirmed()
+            ->with(['images', 'user'])
+            ->withCount(['favoritedBy as favorites_count'])
+            ->when($viewerId, fn ($q) => $q->withFavorited($viewerId))
+            ->orderByDesc('favorites_count')
+            ->orderByDesc('updated_at')
+            ->first();
+
+        $maxLikesCount = $topLot ? $topLot->favorites_count : 0;
 
         $latestLots = Lot::query()
             ->where('user_id', $profileOwner->id)
@@ -174,16 +184,6 @@ class ProfileController extends Controller
             ->latest()
             ->take(12)
             ->get();
-
-        $topLot = Lot::query()
-            ->where('user_id', $profileOwner->id)
-            ->confirmed()
-            ->with(['images', 'user'])
-            ->withCount(['favoritedBy as favorites_count'])
-            ->when($viewerId, fn ($q) => $q->withFavorited($viewerId))
-            ->orderByDesc('favorites_count')
-            ->orderByDesc('updated_at')
-            ->first();
 
         return [
             'user' => [
@@ -201,7 +201,7 @@ class ProfileController extends Controller
             ],
             'stats' => [
                 'lots'       => $lotsCount,
-                'favourites' => $favouritesCount,
+                'favourites' => $maxLikesCount,
             ],
             'latestLots' => $latestLots,
             'topLot'     => $topLot,

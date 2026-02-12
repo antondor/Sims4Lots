@@ -24,7 +24,6 @@ export default function LotsMine({ lots, pendingCount }: Props) {
     return (
         <MainLayout breadcrumbs={breadcrumbs}>
             <Head title="My lots" />
-            <div className="container mx-auto">
                 {pendingCount > 0 && (
                     <Alert className="mb-4">
                         <Info className="h-4 w-4" />
@@ -68,7 +67,6 @@ export default function LotsMine({ lots, pendingCount }: Props) {
                         </div>
                     </>
                 )}
-            </div>
         </MainLayout>
     );
 }

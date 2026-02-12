@@ -1,10 +1,8 @@
 import MainLayout from "@/layouts/main-layout";
 import { Head, Link } from "@inertiajs/react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-// 1. Добавляем ShieldCheck в импорты
-import { ExternalLink, CalendarDays, Folder, Heart, Link as LinkIcon, Edit3, ShieldCheck } from "lucide-react";
+import { ExternalLink, CalendarDays, Folder, Heart, Link as LinkIcon, Edit3, ShieldCheck, User as UserIcon } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { LotCard } from "@/components/lot-card";
@@ -12,6 +10,7 @@ import { FavouriteToggle } from "@/components/common/FavouriteToggle";
 import type { Lot } from "@/types/lots";
 import { route } from "ziggy-js";
 import type { BreadcrumbItem } from "@/types";
+import { SafeHtml } from "@/components/common/safe-html";
 
 dayjs.extend(relativeTime);
 
@@ -26,7 +25,6 @@ type UserDto = {
     created_at: string;
     last_seen_at?: string | null;
     is_online?: boolean;
-    // 2. Добавляем поле is_admin
     is_admin?: number | boolean;
 };
 
@@ -54,7 +52,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
             <Head title={`${user.name} — Profile`} />
 
             <div className="container mx-auto px-4 py-6 md:py-8">
-                <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+                <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8 mb-10">
                     <div className="shrink-0 text-center md:text-left">
                         <div className="relative mx-auto inline-block md:mx-0">
                             <img
@@ -133,8 +131,23 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                     </div>
                 </div>
 
-                <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12">
+                {user.about && (
+                    <Card className="mb-10 gap-0">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <UserIcon className="h-4 w-4 text-muted-foreground" />
+                                About
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-sm text-muted-foreground">
+                                <SafeHtml content={user.about} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
                     <div className="order-2 space-y-8 lg:order-1 lg:col-span-8">
                         {topLot && (
                             <div className="space-y-4">
@@ -209,20 +222,10 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                     <div className="order-1 space-y-6 lg:order-2 lg:col-span-4">
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold flex items-center gap-2">
-                                About
+                                Information
                             </h3>
                             <Card>
                                 <CardContent className="space-y-6 pt-6">
-                                    <div className="text-sm leading-relaxed text-muted-foreground">
-                                        {user.about ? (
-                                            <p className="whitespace-pre-line">{user.about}</p>
-                                        ) : (
-                                            <p className="italic text-muted-foreground/50">No biography provided.</p>
-                                        )}
-                                    </div>
-
-                                    <Separator />
-
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="flex items-center gap-2 text-muted-foreground">
@@ -253,7 +256,9 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold">{stats.favourites}</div>
-                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Likes</div>
+                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                                Top Like
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>

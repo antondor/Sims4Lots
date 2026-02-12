@@ -10,7 +10,7 @@ type Props = {
     error?: string;
     textarea?: boolean;
     type?: HTMLInputTypeAttribute;
-    disabled?: boolean; // ⬅️ добавили
+    disabled?: boolean;
 };
 
 export function TextField({
@@ -22,7 +22,7 @@ export function TextField({
                               error,
                               textarea,
                               type = "text",
-                              disabled = false, // ⬅️ дефолт
+                              disabled = false,
                           }: Props) {
     const common = {
         id,
@@ -30,7 +30,7 @@ export function TextField({
         value,
         onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
             onChange(e.target.value),
-        disabled, // ⬅️ пробрасываем
+        disabled,
         className:
             "w-full rounded-md border px-3 py-2 text-sm " +
             (disabled ? "opacity-60 cursor-not-allowed " : "") +

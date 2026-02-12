@@ -13,6 +13,7 @@ import { BackButton } from "@/components/back-button";
 import { Separator } from "@/components/ui/separator";
 import { Trash2, Upload, User, Shield, Globe, MailWarning, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RichTextEditor } from "@/components/common/rich-text-editor";
 
 export default function ProfileEdit() {
     const { props } = usePage();
@@ -249,13 +250,13 @@ export default function ProfileEdit() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="about">Biography</Label>
-                                <Textarea
-                                    id="about"
-                                    rows={5}
-                                    placeholder="Share your story..."
+                                
+                                <RichTextEditor 
                                     value={data.about ?? ""}
-                                    onChange={(e) => setData("about", e.target.value)}
+                                    onChange={(val) => setData("about", val)}
+                                    error={pageErrors.about}
                                 />
+                                
                                 {pageErrors.about && <p className="text-sm text-red-500">{pageErrors.about}</p>}
                             </div>
 
