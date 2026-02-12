@@ -58,6 +58,26 @@ export const LotShowHeader: React.FC<Props> = ({
         }
     };
 
+    const galleryId = () => {
+        return (
+            <Button
+                variant="outline"
+                onClick={handleCopyId}
+                className="gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                title="Copy EA Gallery ID"
+            >
+                <Copy className="h-4 w-4" />
+                <span className="font-mono font-medium">Gallery ID: {lot.gallery_id}</span>
+            </Button>
+        )
+    }
+
+    const downloadButton = () => {
+        return (
+            <LotDownloadButton href={lot.download_link} />
+        )
+    }
+
     return (
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-3">
@@ -119,18 +139,15 @@ export const LotShowHeader: React.FC<Props> = ({
                     />
                 )}
 
-                {lot.download_link ? (
-                    <LotDownloadButton href={lot.download_link} />
+                {lot.download_link && lot.gallery_id ? (
+                    <>
+                        {galleryId()}
+                        {downloadButton()}
+                    </>
+                ) : lot.download_link ? (
+                    downloadButton()
                 ) : lot.gallery_id ? (
-                    <Button
-                        variant="outline"
-                        onClick={handleCopyId}
-                        className="gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
-                        title="Copy EA Gallery ID"
-                    >
-                        <Copy className="h-4 w-4" />
-                        <span className="font-mono font-medium">Gallery ID: {lot.gallery_id}</span>
-                    </Button>
+                    galleryId()
                 ) : null}
 
                 {isOwner && (

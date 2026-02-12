@@ -13,6 +13,10 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    server: {
+        host: 'sims4lots.test',
+        detectTls: true, 
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),
