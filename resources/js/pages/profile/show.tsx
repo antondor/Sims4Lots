@@ -106,7 +106,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                                 <a href={user.external_url} target="_blank" rel="noreferrer">
                                     <Button variant="outline" size="sm" className="gap-2">
                                         <ExternalLink className="h-4 w-4" />
-                                        Portfolio
+                                        Website
                                     </Button>
                                 </a>
                             )}
@@ -241,7 +241,7 @@ export default function PublicUserShow({ user, stats, latestLots, isOwner, topLo
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="flex items-center gap-2 text-muted-foreground">
                                                 <svg role="img" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4"><path d="M12.87 20.69c-3.1 1.77-6.23-1.6-9.13-4.5S-.9 9.8 1.87 8.2c1.78-1.03 3.96-.34 4.54 1.43.34 1.04-.54 2.22-1.63 2.68a2.1 2.1 0 00-1.25 1.96c.03 2.1 2.87 4.95 4.97 4.97a2.1 2.1 0 001.96-1.25c.46-1.09 1.64-1.97 2.68-1.63 1.77.58 2.46 2.76 1.43 4.54-.57.99-1.23 1.54-1.7 1.8zm3.56-5.46c-1.52-.5-3.05.65-3.66 2.07-.35.8-2.6 3.05-3.4 3.4-1.42.6-2.58 2.13-2.07 3.66.75 2.27 3.9 1.53 7.82-2.39 3.92-3.92 4.66-7.07 2.39-7.82-1.53-.5-3.06.66-3.66 2.08-.36.8-2.6 3.05-3.4 3.4-1.43.6-2.58 2.13-2.08 3.66.75 2.27 3.9 1.53 7.82-2.39 3.92-3.92 4.66-7.07 2.39-7.82h-.01z" /></svg>
-                                                Origin ID
+                                                Gallery ID
                                             </span>
                                             <span className="font-medium">{user.sims_gallery_id || "—"}</span>
                                         </div>

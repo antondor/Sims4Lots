@@ -43,7 +43,7 @@ export function DownloadSourceSelector({ data, setData, errors }: Props) {
                 </TabsContent>
 
                 <TabsContent value="gallery" className="mt-4 space-y-2">
-                    <Label htmlFor="gallery_id">Gallery ID (Item Name or Origin ID)</Label>
+                    <Label htmlFor="gallery_id">Gallery ID</Label>
                     <Input
                         id="gallery_id"
                         placeholder="Example: USERID123 or LotName"

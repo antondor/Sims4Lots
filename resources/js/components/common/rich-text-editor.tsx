@@ -4,13 +4,6 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
 import { Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, Quote, Code, List, ListOrdered, Undo, Redo, Check, X, Unlink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from 'react'
@@ -46,9 +39,6 @@ export function RichTextEditor({ value, onChange, className, error }: Props) {
         },
     })
 
-    const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false)
-    const [linkUrl, setLinkUrl] = useState('')
-
     useEffect(() => {
         if (editor && value !== editor.getHTML()) {
             if (editor.getText() === '' && value === '') return;
@@ -57,33 +47,6 @@ export function RichTextEditor({ value, onChange, className, error }: Props) {
 
     if (!editor) {
         return null
-    }
-
-    const openLinkPopover = () => {
-        const previousUrl = editor.getAttributes('link').href
-        setLinkUrl(previousUrl || '')
-        setIsLinkPopoverOpen(true)
-    }
-
-    const saveLink = () => {
-        if (linkUrl === '') {
-            editor.chain().focus().extendMarkRange('link').unsetLink().run()
-        } else {
-            editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run()
-        }
-        setIsLinkPopoverOpen(false)
-    }
-
-    const removeLink = () => {
-        editor.chain().focus().unsetLink().run()
-        setIsLinkPopoverOpen(false)
-    }
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            saveLink()
-        }
     }
 
     return (
@@ -107,58 +70,6 @@ export function RichTextEditor({ value, onChange, className, error }: Props) {
                 >
                     <UnderlineIcon className="h-4 w-4" />
                 </Button>
-                
-                <Separator orientation="vertical" className="mx-1 h-5" />
-                
-                <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            type="button" 
-                            variant="ghost" 
-                            size="icon" 
-                            className={cn("h-8 w-8", editor.isActive('link') && "bg-muted text-primary")}
-                            onClick={openLinkPopover}
-                        >
-                            <LinkIcon className="h-4 w-4" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-4" align="start">
-                        <div className="flex flex-col gap-4">
-                            <div className="space-y-2">
-                                <h4 className="font-medium leading-none">Edit Link</h4>
-                                <p className="text-xs text-muted-foreground">
-                                    Paste the URL below. Press Enter to save.
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="url" className="sr-only">Link</Label>
-                                <Input
-                                    id="url"
-                                    value={linkUrl}
-                                    onChange={(e) => setLinkUrl(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="https://example.com"
-                                    className="h-8"
-                                    autoFocus
-                                />
-                            </div>
-                            <div className="flex justify-between">
-                                <Button 
-                                    size="sm" 
-                                    variant="ghost" 
-                                    onClick={removeLink}
-                                    disabled={!editor.isActive('link')}
-                                    className="text-red-500 hover:text-red-600 hover:bg-red-50 h-8 px-2"
-                                >
-                                    <Unlink className="h-3.5 w-3.5 mr-1" /> Remove
-                                </Button>
-                                <Button size="sm" onClick={saveLink} className="h-8">
-                                    Save
-                                </Button>
-                            </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
                 
                 <Separator orientation="vertical" className="mx-1 h-5" />
 

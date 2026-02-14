@@ -262,7 +262,7 @@ export default function ProfileEdit() {
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="external_url">Portfolio / Website</Label>
+                                    <Label htmlFor="external_url">Website</Label>
                                     <Input id="external_url" type="url" placeholder="https://" value={data.external_url ?? ""} onChange={(e) => setData("external_url", e.target.value)} />
                                     {pageErrors.external_url && <p className="text-sm text-red-500">{pageErrors.external_url}</p>}
                                 </div>
