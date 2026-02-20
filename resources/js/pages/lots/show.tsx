@@ -6,6 +6,8 @@ import { route } from "ziggy-js";
 import { BreadcrumbItem } from "@/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, ShieldX } from "lucide-react";
+import { useState } from "react";
+import axios from "axios";
 
 import { LotShowHeader } from "@/components/lots/lot-show-header";
 import { LotImagesCard } from "@/components/lots/lot-images-card";
@@ -13,7 +15,7 @@ import { LotMainInfo } from "@/components/lots/lot-main-info";
 import { LotDetailsAside } from "@/components/lots/lot-details-aside";
 
 type PageProps = {
-    lot: Lot;
+    lot: Lot & { downloads_count: number };
     isOwner: boolean;
     isFavorited: boolean;
     isAdmin: boolean;
@@ -32,6 +34,8 @@ export default function LotShow(props: PageProps) {
     const isPendingForCurrentUser = Array.isArray(pendingIds)
         ? pendingIds.includes(lot.id)
         : false;
+
+    const [downloadsCount, setDownloadsCount] = useState(lot.downloads_count || 0);
 
     const approve = () => {
         router.post(
@@ -55,6 +59,16 @@ export default function LotShow(props: PageProps) {
                 onError: () => toast.error("Failed to reject lot"),
             },
         );
+    };
+
+    const handleDownload = () => {
+        axios.post(route("lots.download", lot.id))
+            .then(res => {
+                if (res.data.success) {
+                    setDownloadsCount(res.data.downloads_count);
+                }
+            })
+            .catch(() => {});
     };
 
     const images = lot.images ?? [];
@@ -102,6 +116,8 @@ export default function LotShow(props: PageProps) {
                         onReject={reject}
                         initialLiked={initialLiked}
                         initialCount={initialCount}
+                        onDownloadClick={handleDownload}
+                        downloadsCount={downloadsCount}
                     />
 
                     <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted border shadow-sm">

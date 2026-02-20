@@ -92,7 +92,7 @@ export const LotsList: React.FC<Props> = ({
                         {showCreateButton && user && (
                             <Button asChild size="sm" className="w-[75%] md:w-auto justify-center">
                                 <Link href={route("lots.create")}>
-                                    <Plus className="h-4 w-4 mr-2" />
+                                    <Plus className="h-4 w-4" />
                                     Create new
                                 </Link>
                             </Button>

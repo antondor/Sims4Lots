@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('lots')->name('lots.')->group(function () {
     Route::get('search', [LotController::class, 'search'])->name('search');
     Route::get('{lot}', [LotController::class, 'view'])->whereNumber('lot')->name('view');
+    Route::post('{lot}/download', [LotController::class, 'incrementDownload'])->name('download');
 });
 
 Route::middleware('auth')->group(function () {

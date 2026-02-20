@@ -29,6 +29,8 @@ type Props = {
     onReject: (reason?: string) => void;
     initialLiked: boolean;
     initialCount: number;
+    onDownloadClick: () => void;
+    downloadsCount: number;
 };
 
 export const LotShowHeader: React.FC<Props> = ({
@@ -40,6 +42,8 @@ export const LotShowHeader: React.FC<Props> = ({
     onReject,
     initialLiked,
     initialCount,
+    onDownloadClick,
+    downloadsCount,
 }) => {
     const canShowFavourite = lot.status === "confirmed";
     const [isRejectDialogOpen, setIsRejectDialogOpen] = React.useState(false);
@@ -74,7 +78,11 @@ export const LotShowHeader: React.FC<Props> = ({
 
     const downloadButton = () => {
         return (
-            <LotDownloadButton href={lot.download_link} />
+            <LotDownloadButton 
+                href={lot.download_link} 
+                onClick={onDownloadClick}
+                downloadsCount={downloadsCount}
+            />
         )
     }
 

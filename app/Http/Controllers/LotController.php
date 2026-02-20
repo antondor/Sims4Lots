@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Intervention\Image\Drivers\Gd\Driver;
 use App\Notifications\LotApprovedNotification;
 use App\Notifications\LotRejectedNotification;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\File;
 
 class LotController extends Controller
@@ -24,8 +25,6 @@ class LotController extends Controller
     private const CONTENT_TYPES = ['CC','NoCC'];
     private const FURNISHINGS   = ['Furnished','Unfurnished'];
     private const LOT_TYPES     = ['Residential','Community'];
-
-    // ===== Public actions ==============================================================
 
     public function index(Request $request)
     {
@@ -153,7 +152,7 @@ class LotController extends Controller
             $existingImagesCount = $lot->images()->count();
 
             if ($newImagesCount + $existingImagesCount === 0) {
-                $validator->errors()->add('images', 'В лоте должно быть хотя бы одно изображение.');
+                $validator->errors()->add('images', 'The lot must contain at least one image of this item');
             }
         });
 
@@ -196,7 +195,6 @@ class LotController extends Controller
         ]);
     }
 
-
     public function pendingList(Request $request)
     {
         abort_unless(Gate::allows('admin'), 403);
@@ -211,7 +209,6 @@ class LotController extends Controller
 
         return Inertia::render('admin/lots/pending', ['lots' => $lots]);
     }
-
 
     public function store(Request $request)
     {
@@ -300,16 +297,32 @@ class LotController extends Controller
         }
 
         if ($lot->images()->count() <= 1) {
-            return back()->withErrors(['images' => 'Нельзя удалить последнюю фотографию. Добавьте новую, прежде чем удалять эту.']);
+            return back()->withErrors(['images' => "You can't delete the last image. Please add a new one before deleting this one"]);
         }
 
         Storage::disk('s3')->delete("images/lots/{$lot->id}/{$image->filename}");
         $image->delete();
 
-        return back()->with('success', 'Изображение удалено.');
+        return back()->with('success', 'Image deleted');
     }
 
-    // ====== Private helpers ============================================================
+    public function incrementDownload(Lot $lot, Request $request)
+    {
+        $userId = auth()->id() ?? $request->ip();
+        $cacheKey = "download_lock:{$lot->id}:{$userId}";
+
+        $incremented = Cache::add($cacheKey, true, now()->addHour());
+
+        if ($incremented) {
+            $lot->increment('downloads_count');
+        }
+
+        return response()->json([
+            'success' => true,
+            'downloads_count' => $lot->downloads_count,
+            'incremented' => (bool)$incremented
+        ]);
+    }
 
     private function attachFavFlag(Builder $query): Builder
     {

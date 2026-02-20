@@ -6,9 +6,11 @@ type Props = {
     href?: string | null;
     size?: "sm" | "default" | "lg" | "icon";
     className?: string;
+    onClick?: () => void;
+    downloadsCount?: number;
 };
 
-export function LotDownloadButton({ href, size = "default", className }: Props) {
+export function LotDownloadButton({ href, size = "default", className, onClick, downloadsCount }: Props) {
     if (!href) return null;
 
     const safeHref = String(href).trim();
@@ -22,13 +24,14 @@ export function LotDownloadButton({ href, size = "default", className }: Props) 
             className="inline-flex"
             aria-label="Download lot"
             title="Download lot"
+            onClick={onClick}
         >
             <Button
                 size={size}
                 className={["gap-2", className].filter(Boolean).join(" ")}
             >
                 <Download className="h-4 w-4" />
-                Download
+                Download {downloadsCount !== undefined && `(${downloadsCount})`}
             </Button>
         </a>
     );

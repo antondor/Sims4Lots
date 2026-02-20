@@ -60,10 +60,12 @@ export function MobileNav() {
                             My Lots
                         </MobileLink>
 
-                        <MobileLink href={route("favourites.index", { user: user.id })} onOpenChange={setOpen}>
-                            <Folder className="mr-2 h-5 w-5" />
-                            Favourites
-                        </MobileLink>
+                        {user && (
+                            <MobileLink href={route("favourites.index", { user: user.id })} onOpenChange={setOpen}>
+                                <Folder className="mr-2 h-5 w-5" />
+                                Favourites
+                            </MobileLink>
+                        )}
                     </div>
                 </div>
 

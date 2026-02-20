@@ -25,6 +25,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'confirmed', 'invalid'])
                 ->default('pending');
             $table->text('rejection_reason')->nullable();
+            $table->unsignedInteger('downloads_count')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

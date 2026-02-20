@@ -35,6 +35,7 @@ export interface Lot {
     favorites_count?: number;
     created_at: string;
     updated_at: string;
+    downloads: number;
     user?: PreviewUser;
     images?: LotImage[];
     cover_image?: LotImage | null;
