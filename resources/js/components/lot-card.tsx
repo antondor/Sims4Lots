@@ -195,13 +195,13 @@ export function LotCard({ lot }: Props) {
                                     <Button asChild variant="secondary" className="w-full">
                                         <Link href={lotUrl}>
                                             View lot
-                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                            <ArrowRight className="h-4 w-4" />
                                         </Link>
                                     </Button>
                                 ) : (
                                     <Button variant="secondary" className="w-full" disabled>
                                         View lot
-                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                        <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 )}
                             </div>
@@ -265,13 +265,13 @@ export function LotCard({ lot }: Props) {
                             <Button asChild variant="outline" className="w-full">
                                 <Link href={lotUrl}>
                                     View lot
-                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                    <ArrowRight className="h-4 w-4" />
                                 </Link>
                             </Button>
                         ) : (
                             <Button variant="outline" className="w-full" disabled>
                                 View lot
-                                <ArrowRight className="ml-2 h-4 w-4" />
+                                <ArrowRight className="h-4 w-4" />
                             </Button>
                         )}
                     </div>

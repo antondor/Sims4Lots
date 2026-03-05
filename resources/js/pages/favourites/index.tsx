@@ -37,7 +37,7 @@ export default function FavouritesIndex({ lots, owner, isOwner }: Props) {
             <Head title={title} />
             <MainLayout breadcrumbs={breadcrumbs}>
                 
-                <div className="mb-8">
+                <div className="mb-6">
                     <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                         {displayTitle}
                     </h1>
@@ -59,7 +59,7 @@ export default function FavouritesIndex({ lots, owner, isOwner }: Props) {
                             {isOwner ? "No favorites yet" : "No favorites found"}
                         </h3>
 
-                        <p className="mb-8 mt-2 max-w-sm text-center text-sm text-muted-foreground">
+                        <p className="mb-6 mt-2 max-w-sm text-center text-sm text-muted-foreground">
                             {isOwner
                                 ? "You haven't saved any lots yet. Browse the catalog to find creations that inspire you."
                                 : `${owner.name} hasn't added any lots to their favorites yet.`
@@ -68,7 +68,7 @@ export default function FavouritesIndex({ lots, owner, isOwner }: Props) {
 
                         <Button asChild variant={isOwner ? "default" : "outline"}>
                             <Link href={route("dashboard")}>
-                                <Search className="mr-2 h-4 w-4" />
+                                <Search className="h-4 w-4" />
                                 Explore Lots
                             </Link>
                         </Button>

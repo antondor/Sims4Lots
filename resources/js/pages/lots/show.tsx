@@ -81,7 +81,7 @@ export default function LotShow(props: PageProps) {
         <MainLayout breadcrumbs={breadcrumbs}>
             <Head title={lot.name} />
 
-            <div className="container mx-auto max-w-screen-xl px-4 py-4 md:py-8">
+            <div className="container mx-auto max-w-screen-xl px-4 py-4">
                 {showStatusAlert && (
                     <Alert variant={isPending ? "default" : "destructive"} className="mb-6">
                         {isPending ? (
@@ -117,7 +117,6 @@ export default function LotShow(props: PageProps) {
                         initialLiked={initialLiked}
                         initialCount={initialCount}
                         onDownloadClick={handleDownload}
-                        downloadsCount={downloadsCount}
                     />
 
                     <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted border shadow-sm">
@@ -134,7 +133,7 @@ export default function LotShow(props: PageProps) {
 
                         <div className="order-1 lg:order-2 lg:col-span-1">
                             <div className="sticky top-20 space-y-6">
-                                <LotDetailsAside lot={lot} />
+                                <LotDetailsAside lot={lot} downloadsCount={downloadsCount} />
                             </div>
                         </div>
                     </div>

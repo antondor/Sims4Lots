@@ -5,9 +5,10 @@ import {LotAuthor} from "@/components/lots/lot-author";
 
 type Props = {
     lot: Lot;
+    downloadsCount: number;
 };
 
-export const LotDetailsAside: React.FC<Props> = ({ lot }) => {
+export const LotDetailsAside: React.FC<Props> = ({ lot, downloadsCount }) => {
     return (
         <aside className="rounded-xl border p-4 md:p-5 h-fit">
             <LotAuthor name={lot.user?.name} avatarUrl={lot.user?.avatar_url} />
@@ -19,6 +20,7 @@ export const LotDetailsAside: React.FC<Props> = ({ lot }) => {
                 <SpecItem label="Type" value={lot.lot_type} />
                 {lot.bedrooms !== null ? <SpecItem label="Bedrooms" value={lot.bedrooms} /> : null}
                 {lot.bedrooms !== null ? <SpecItem label="Bathrooms" value={lot.bathrooms} /> : null}
+                <SpecItem label="Downloads" value={downloadsCount} />
             </div>
         </aside>
     );

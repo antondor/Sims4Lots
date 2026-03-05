@@ -42,8 +42,12 @@ export function MobileNav() {
                             className="flex items-center gap-2 w-fit"
                             onClick={() => setOpen(false)}
                         >
-                            <LayoutDashboard className="h-6 w-6 text-primary" />
-                            <span className="font-bold text-lg">PLOTPALETTE</span>
+                            <img 
+                                src="/logo.svg" 
+                                alt="TheSimsBuilds" 
+                                className="h-8 w-8 object-contain" 
+                            />
+                            <span className="font-bold text-lg">The Sims Builds</span>
                         </Link>
                     </DrawerTitle>
                 </DrawerHeader>

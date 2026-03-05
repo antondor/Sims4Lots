@@ -30,7 +30,6 @@ type Props = {
     initialLiked: boolean;
     initialCount: number;
     onDownloadClick: () => void;
-    downloadsCount: number;
 };
 
 export const LotShowHeader: React.FC<Props> = ({
@@ -43,7 +42,6 @@ export const LotShowHeader: React.FC<Props> = ({
     initialLiked,
     initialCount,
     onDownloadClick,
-    downloadsCount,
 }) => {
     const canShowFavourite = lot.status === "confirmed";
     const [isRejectDialogOpen, setIsRejectDialogOpen] = React.useState(false);
@@ -78,13 +76,12 @@ export const LotShowHeader: React.FC<Props> = ({
 
     const downloadButton = () => {
         return (
-            <LotDownloadButton 
-                href={lot.download_link} 
+            <LotDownloadButton
+                href={lot.download_link}
                 onClick={onDownloadClick}
-                downloadsCount={downloadsCount}
             />
-        )
-    }
+        );
+    };
 
     return (
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -98,7 +95,7 @@ export const LotShowHeader: React.FC<Props> = ({
                 )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+            <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 {canModerate && lot.status === "pending" && (
                     <div className="flex flex-wrap gap-2">
                         <Button onClick={onApprove}>Approve</Button>
@@ -137,46 +134,51 @@ export const LotShowHeader: React.FC<Props> = ({
                     </div>
                 )}
 
-                {canShowFavourite && (
-                    <FavouriteToggle
-                        lotId={lot.id}
-                        initialLiked={initialLiked}
-                        initialCount={initialCount}
-                        size="md"
-                        showCount
-                    />
-                )}
+                <div className="flex flex-wrap items-center gap-2 w-full">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {canShowFavourite && (
+                            <FavouriteToggle
+                                lotId={lot.id}
+                                initialLiked={initialLiked}
+                                initialCount={initialCount}
+                                size="md"
+                                showCount
+                            />
+                        )}
 
-                {lot.download_link && lot.gallery_id ? (
-                    <>
-                        {galleryId()}
-                        {downloadButton()}
-                    </>
-                ) : lot.download_link ? (
-                    downloadButton()
-                ) : lot.gallery_id ? (
-                    galleryId()
-                ) : null}
+                        {lot.download_link && lot.gallery_id ? (
+                            <>
+                                {galleryId()}
+                                {downloadButton()}
+                            </>
+                        ) : lot.download_link ? (
+                            downloadButton()
+                        ) : lot.gallery_id ? (
+                            galleryId()
+                        ) : null}
 
-                {isOwner && (
-                    <Link href={route("lots.edit", lot.id)}>
-                        <Button
-                            variant="secondary"
-                            className="gap-2 transition-[filter,opacity] hover:opacity-90 hover:brightness-95"
-                            title="Edit this lot"
-                        >
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                        </Button>
-                    </Link>
-                )}
-
-                <Button
-                    variant="outline"
-                    onClick={() => window.history.back()}
-                >
-                    Back
-                </Button>
+                        {isOwner && (
+                            <Link href={route("lots.edit", lot.id)}>
+                                <Button
+                                    variant="secondary"
+                                    className="gap-2 transition-[filter,opacity] hover:opacity-90 hover:brightness-95"
+                                    title="Edit this lot"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                    Edit
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
+                    
+                    <Button
+                        variant="outline"
+                        onClick={() => window.history.back()}
+                        className="ml-auto"
+                    >
+                        Back
+                    </Button>
+                </div>
             </div>
         </div>
     );

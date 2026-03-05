@@ -4,7 +4,7 @@ import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../css/app.css";
 
-const appName = import.meta.env.VITE_APP_NAME || 'PlotPalette';
+const appName = import.meta.env.VITE_APP_NAME || 'TSB';
 
 createInertiaApp({
     title: (title) => `${title} | ${appName}`,

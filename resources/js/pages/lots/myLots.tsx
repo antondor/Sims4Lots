@@ -62,7 +62,7 @@ export default function LotsMine({ lots, pendingCount }: Props) {
                     </p>
                     <Button asChild>
                         <Link href={route('lots.create')}>
-                            <Plus className="mr-2 h-4 w-4" />
+                            <Plus className="h-4 w-4" />
                             Create your first Lot
                         </Link>
                     </Button>
