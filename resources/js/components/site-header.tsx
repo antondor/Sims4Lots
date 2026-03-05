@@ -14,7 +14,7 @@ export function SiteHeader() {
                 {/* <div className="flex md:hidden items-center ml-4 mr-4 shrink-0">
                     <Link href="/" className="flex items-center gap-2">
                         <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white">
-                            The Sims Builds
+                            The Sims 4 Builds
                         </span>
                     </Link>
                 </div> */}

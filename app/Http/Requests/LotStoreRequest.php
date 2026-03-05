@@ -19,7 +19,7 @@ class LotStoreRequest extends FormRequest
             'gallery_id'    => ['nullable','string','max:255'],
             'creator_link'  => ['nullable','url','max:255'],
             'download_link' => ['nullable','url','max:255'],
-            'lot_size'      => ['required','in:20x15,30x20,40x30,50x50,64x64'],
+            'lot_size'      => ['required','in:20x15,20x20,30x20,30x30,40x20,40x30,40x40,50x40,50x50,64x64'],
             'content_type'  => ['required','in:CC,NoCC'],
             'furnishing'    => ['required','in:Furnished,Unfurnished'],
             'lot_type'      => ['required','in:Residential,Community'],

@@ -21,7 +21,18 @@ use Illuminate\Http\File;
 
 class LotController extends Controller
 {
-    private const LOT_SIZES     = ['20x15','30x20','40x30','50x50','64x64'];
+    private const LOT_SIZES     = [
+        '20x15',
+        '20x20',
+        '30x20',
+        '30x30',
+        '40x20',
+        '40x30',
+        '40x40',
+        '50x40',
+        '50x50',
+        '64x64',
+    ];
     private const CONTENT_TYPES = ['CC','NoCC'];
     private const FURNISHINGS   = ['Furnished','Unfurnished'];
     private const LOT_TYPES     = ['Residential','Community'];
