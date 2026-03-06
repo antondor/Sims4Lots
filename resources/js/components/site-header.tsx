@@ -4,8 +4,15 @@ import { UserNav } from "@/components/user-nav";
 import { Link } from "@inertiajs/react";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { MobileNav } from "@/components/mobile-nav";
+import { useTheme } from "@/components/theme-provider";
 
 export function SiteHeader() {
+    const { theme } = useTheme();
+    const isSystemDark =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = theme === "dark" || (theme === "system" && isSystemDark);
+
     return (
         <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border">
             <div className="container flex h-16 items-center px-2 md:px-8 max-w-screen-2xl mx-auto">
@@ -22,7 +29,7 @@ export function SiteHeader() {
                 <div className="mr-4 hidden md:flex">
                     <Link href="/" className="flex items-center space-x-2 transition-opacity hover:opacity-80">
                         <img 
-                            src="/logo_name.svg" 
+                            src={isDark ? "/logo_name_white.svg" : "/logo_name.svg"}
                             alt="TheSimsBuilds" 
                             className="h-12 w-12 object-contain" 
                         />
