@@ -54,12 +54,12 @@ export function MainNav({ className, ...props }: React.HTMLAttributes<HTMLElemen
                 <Link
                     href={route("admin.lots.pending")}
                     className={cn(
-                        "relative flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors text-sm font-bold",
-                        route().current("admin.lots.pending") ? "ring-2 ring-yellow-500" : ""
+                        "relative flex items-center px-3 py-1 rounded-full bg-accent text-accent-foreground hover:bg-accent/80 transition-colors text-sm font-bold",
+                        route().current("admin.lots.pending") ? "ring-2 ring-ring" : ""
                     )}
                 >
                     Pending Lots
-                    <span className="ml-2 bg-yellow-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    <span className="ml-2 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
                         {pendingLotsCount}
                     </span>
                 </Link>

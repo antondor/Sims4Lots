@@ -49,8 +49,10 @@ export function FavouriteToggle({
                 ? "h-4.5 w-4.5"
                 : "h-4 w-4";
 
-    const borderColor = liked ? "border-red-500" : "border-black";
-    const contentColor = liked ? "text-red-600" : "text-black";
+    // Use the shared primary color for the outline so it matches other accents.
+    // When liked, the heart/count turn primary; when not, they stay muted.
+    const borderColor = "border-primary";
+    const contentColor = liked ? "text-primary" : "text-muted-foreground";
 
     return (
         <div className={cn("inline-flex items-center", className)}>
@@ -61,7 +63,7 @@ export function FavouriteToggle({
                 aria-pressed={liked}
                 aria-label={ariaLabel ?? (liked ? "Remove from favourites" : "Add to favourites")}
                 className={cn(
-                    "inline-flex items-center justify-center rounded-full transition-all",
+                    "inline-flex items-center justify-center rounded-full border transition-all",
                     "bg-background/70 backdrop-blur hover:bg-background/90 hover:shadow disabled:opacity-60",
                     sizeClasses,
                     borderColor
