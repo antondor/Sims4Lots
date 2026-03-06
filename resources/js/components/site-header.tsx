@@ -7,7 +7,7 @@ import { MobileNav } from "@/components/mobile-nav";
 
 export function SiteHeader() {
     return (
-        <header className="sticky top-0 z-50 w-full bg-[#f7f8fa]/80 backdrop-blur-md supports-[backdrop-filter]:bg-[#f7f8fa]/60 shadow-sm dark:bg-background/95 dark:shadow-secondary/20">
+        <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border">
             <div className="container flex h-16 items-center px-2 md:px-8 max-w-screen-2xl mx-auto">
                 <MobileNav />
 
@@ -42,7 +42,7 @@ export function SiteHeader() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-gray-200 dark:border-gray-700 shrink-0">
+                    <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-border shrink-0">
                         <NotificationsDropdown />
                         <UserNav />
                     </div>

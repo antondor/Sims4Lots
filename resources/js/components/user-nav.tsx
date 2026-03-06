@@ -155,7 +155,7 @@ export function UserNav() {
                             setOpen(false);
                             router.post(route("logout"));
                         }}
-                        className="flex w-full items-center rounded-md px-3 py-3 text-base font-medium text-red-600 transition-colors hover:bg-red-50"
+                        className="flex w-full items-center rounded-md px-3 py-3 text-base font-medium text-destructive transition-colors hover:bg-destructive/10"
                     >
                         <LogOut className="mr-3 h-5 w-5" />
                         Log out

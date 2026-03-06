@@ -35,7 +35,7 @@ export function MobileNav() {
 
                 <div className="hidden" />
 
-                <DrawerHeader className="text-left border-b pb-4 pt-6">
+                <DrawerHeader className="text-left border-b border-border pb-4 pt-6">
                     <DrawerTitle asChild>
                         <Link
                             href="/"
@@ -53,7 +53,7 @@ export function MobileNav() {
                 </DrawerHeader>
 
                 <div className="p-4 space-y-4">
-                    <div className="flex flex-col space-y-2">
+                    <div className="flex flex-col space-y-2 text-foreground">
                         <MobileLink href={route("dashboard")} onOpenChange={setOpen}>
                             <Home className="mr-2 h-5 w-5" />
                             Dashboard

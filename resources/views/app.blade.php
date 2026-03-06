@@ -30,9 +30,22 @@
         (() => {
             try {
                 const stored = localStorage.getItem("theme");
-                const theme = stored === "dark" || stored === "light" ? stored : "light";
+                const prefersDark = window.matchMedia &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+                let theme = "light";
+
+                if (stored === "dark" || stored === "light") {
+                    theme = stored;
+                } else if (stored === "system") {
+                    theme = prefersDark ? "dark" : "light";
+                } else {
+                    theme = prefersDark ? "dark" : "light";
+                }
+
                 const root = document.documentElement;
-                root.classList.toggle("dark", theme === "dark");
+                root.classList.remove("light", "dark");
+                root.classList.add(theme);
                 root.style.colorScheme = theme;
             } catch (e) {
                 // ignore
