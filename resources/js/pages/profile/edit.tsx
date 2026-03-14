@@ -61,8 +61,6 @@ export default function ProfileEdit() {
     };
 
     const handleDeleteAvatar = () => {
-        if (!confirm("Are you sure you want to remove your avatar?")) return;
-
         const form = document.createElement("form");
         form.method = "post";
         form.action = route("profile.avatar.destroy");
@@ -250,13 +248,13 @@ export default function ProfileEdit() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="about">Biography</Label>
-                                
-                                <RichTextEditor 
+
+                                <RichTextEditor
                                     value={data.about ?? ""}
                                     onChange={(val) => setData("about", val)}
                                     error={pageErrors.about}
                                 />
-                                
+
                                 {pageErrors.about && <p className="text-sm text-red-500">{pageErrors.about}</p>}
                             </div>
 

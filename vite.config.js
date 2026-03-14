@@ -15,7 +15,7 @@ export default defineConfig({
     ],
     server: {
         host: 'sims4lots.test',
-        detectTls: true, 
+        detectTls: true,
     },
     resolve: {
         alias: {

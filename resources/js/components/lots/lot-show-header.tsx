@@ -96,45 +96,44 @@ export const LotShowHeader: React.FC<Props> = ({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                {canModerate && lot.status === "pending" && (
-                    <div className="flex flex-wrap gap-2">
-                        <Button onClick={onApprove}>Approve</Button>
-                        <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="destructive">Reject</Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md">
-                                <DialogHeader>
-                                    <DialogTitle>Reject lot</DialogTitle>
-                                    <DialogDescription>
-                                        Optionally explain why this lot is being rejected.
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="reject-reason">Rejection reason (optional)</Label>
-                                    <Textarea
-                                        id="reject-reason"
-                                        value={rejectReason}
-                                        onChange={(event) => setRejectReason(event.target.value)}
-                                        placeholder="Example: Missing screenshots or download link is broken"
-                                    />
-                                </div>
-
-                                <DialogFooter className="gap-2 sm:gap-0">
-                                    <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button variant="destructive" onClick={handleReject}>
-                                        Confirm rejection
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                )}
-
                 <div className="flex flex-wrap items-center gap-2 w-full">
+                    {canModerate && lot.status === "pending" && (
+                        <div className="flex flex-wrap gap-2">
+                            <Button onClick={onApprove}>Approve</Button>
+                            <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="destructive">Reject</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Reject lot</DialogTitle>
+                                        <DialogDescription>
+                                            Optionally explain why this lot is being rejected.
+                                        </DialogDescription>
+                                    </DialogHeader>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="reject-reason">Rejection reason (optional)</Label>
+                                        <Textarea
+                                            id="reject-reason"
+                                            value={rejectReason}
+                                            onChange={(event) => setRejectReason(event.target.value)}
+                                            placeholder="Example: Missing screenshots or download link is broken"
+                                        />
+                                    </div>
+
+                                    <DialogFooter className="gap-2 sm:gap-0">
+                                        <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
+                                            Cancel
+                                        </Button>
+                                        <Button variant="destructive" onClick={handleReject}>
+                                            Confirm rejection
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-2">
                         {canShowFavourite && (
                             <FavouriteToggle
@@ -170,14 +169,6 @@ export const LotShowHeader: React.FC<Props> = ({
                             </Link>
                         )}
                     </div>
-                    
-                    <Button
-                        variant="outline"
-                        onClick={() => window.history.back()}
-                        className="ml-auto"
-                    >
-                        Back
-                    </Button>
                 </div>
             </div>
         </div>

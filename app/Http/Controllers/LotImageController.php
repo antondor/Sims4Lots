@@ -82,4 +82,24 @@ class LotImageController extends Controller
         return back()->with('success', 'Image deleted');
     }
 
+    public function reorder(Request $request, Lot $lot)
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'exists:lot_images,id'
+        ]);
+
+        $order = $request->input('order');
+
+        DB::transaction(function () use ($order) {
+            foreach ($order as $index => $id) {
+                DB::table('lot_images')
+                    ->where('id', $id)
+                    ->update(['position' => $index]);
+            }
+        });
+
+        return back()->with('success', 'Order updated');
+    }
+
 }

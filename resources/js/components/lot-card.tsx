@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,8 @@ import { Link } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import { resolveSrc, AVATAR_PLACEHOLDER, IMAGE_PLACEHOLDER } from "@/lib";
 import { FavouriteToggle } from "@/components/common/FavouriteToggle";
-import {LotSpecRow} from "@/components/lots/spec-row";
+import { LotSpecRow } from "@/components/lots/spec-row";
+import { LotOption } from "@/components/lots/spec-option";
 
 type Props = { lot: Lot & { is_favorited?: boolean; isFavorited?: boolean } };
 
@@ -29,13 +29,15 @@ export function LotCard({ lot }: Props) {
     const lotUrl = lotId ? route("lots.view", { lot: lotId }) : "#";
     const userUrl = lot.user?.id ? route("users.show", { user: lot.user.id }) : null;
 
-    const cover = lot.cover_image ?? (lot.images?.[0] ?? null);
+    const cover = lot.images?.find(img => img.position === 0);
 
     let coverUrl = IMAGE_PLACEHOLDER;
 
     if (cover?.url) {
         const thumbUrl = cover.url.replace(/(\.[^.]+)$/, '_thumb$1');
         coverUrl = resolveSrc(thumbUrl) ?? IMAGE_PLACEHOLDER;
+    } else if (lot.cover_image) {
+        coverUrl = lot?.cover_image.url;
     }
 
     const isCommunity = lot.lot_type === "Community";
@@ -212,49 +214,15 @@ export function LotCard({ lot }: Props) {
                 <div className="mt-3 md:hidden">
                     <div className="rounded-lg border bg-background/70 px-3 py-2">
                         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                            <div className="flex flex-col">
-                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    Type
-                                </dt>
-                                <dd className="text-sm text-foreground">{lot.lot_type}</dd>
-                            </div>
+                            <LotOption text="Type" value={lot.lot_type} />
+                            <LotOption text="Size" value={lot.lot_size} />
+                            <LotOption text="Content" value={lot.content_type} />
+                            <LotOption text="Furnishing" value={lot.furnishing} />
 
-                            <div className="flex flex-col">
-                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    Size
-                                </dt>
-                                <dd className="text-sm text-foreground">{lot.lot_size}</dd>
-                            </div>
-
-                            <div className="flex flex-col">
-                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    Content
-                                </dt>
-                                <dd className="text-sm text-foreground">{lot.content_type}</dd>
-                            </div>
-
-                            <div className="flex flex-col">
-                                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    Furnishing
-                                </dt>
-                                <dd className="text-sm text-foreground">{lot.furnishing}</dd>
-                            </div>
-
-                            {!isCommunity && (
+                            {(!isCommunity && (lot.bedrooms !== null || lot.bathrooms !== null)) && (
                                 <>
-                                    <div className="flex flex-col">
-                                        <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                            Bedrooms
-                                        </dt>
-                                        <dd className="text-sm text-foreground">{lot.bedrooms ?? 0}</dd>
-                                    </div>
-
-                                    <div className="flex flex-col">
-                                        <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                            Bathrooms
-                                        </dt>
-                                        <dd className="text-sm text-foreground">{lot.bathrooms ?? 0}</dd>
-                                    </div>
+                                    <LotOption text="Bedrooms" value={lot.bedrooms} />
+                                    <LotOption text="Bathrooms" value={lot.bathrooms} />
                                 </>
                             )}
                         </dl>

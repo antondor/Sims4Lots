@@ -59,11 +59,26 @@ export default function CreateLot({ enums }: { enums: Enums }) {
         }
     }, [isCommunity]);
 
-    const onFilesChange = (files: FileList | null) => {
-        const arr = files ? Array.from(files) : [];
-        setData("images", arr);
-        const readers = arr.map((f) => URL.createObjectURL(f));
-        setPreviews(readers);
+    const handleAddImages = (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        const arr = Array.from(files);
+        const newImages = [...(data.images ?? []), ...arr];
+        setData("images", newImages);
+        setPreviews(newImages.map((f) => URL.createObjectURL(f)));
+    };
+
+    const handleRemoveImage = (index: number) => {
+        const newImages = (data.images ?? []).filter((_, i) => i !== index);
+        setData("images", newImages);
+        setPreviews(newImages.map((f) => URL.createObjectURL(f)));
+    };
+
+    const handleReorderImages = (indexA: number, indexB: number) => {
+        const newImages = [...(data.images ?? [])];
+        [newImages[indexA], newImages[indexB]] = [newImages[indexB], newImages[indexA]];
+
+        setData("images", newImages);
+        setPreviews(newImages.map((f) => URL.createObjectURL(f)));
     };
 
     const submit = (e: React.FormEvent) => {
@@ -102,7 +117,9 @@ export default function CreateLot({ enums }: { enums: Enums }) {
                         errors={errors}
                         enums={enums}
                         previews={previews}
-                        onFilesChange={onFilesChange}
+                        onAddImages={handleAddImages}
+                        onRemoveImage={handleRemoveImage}
+                        onReorderImages={handleReorderImages}
                         badSet={badSet}
                     />
 

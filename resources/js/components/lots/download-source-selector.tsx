@@ -46,7 +46,7 @@ export function DownloadSourceSelector({ data, setData, errors }: Props) {
                     <Label htmlFor="gallery_id">Gallery ID</Label>
                     <Input
                         id="gallery_id"
-                        placeholder="Example: USERID123 or LotName"
+                        placeholder="Example: 123456"
                         value={data.gallery_id ?? ""}
                         onChange={(e) => setData("gallery_id", e.target.value)}
                     />

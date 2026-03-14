@@ -6,18 +6,11 @@ import { route } from "ziggy-js";
 import { ExistingImagesGrid } from "@/components/lots/existing-images-grid";
 import { FormActions } from "@/components/lots/form-actions";
 import { DeleteLotButton } from "@/components/lots/delete-lot-button";
-import { BreadcrumbItem } from "@/types";
 import { BackButton } from "@/components/back-button";
 import { LotForm, type LotData } from "@/components/lots/lot-form";
 import { PageHeader } from "@/components/upload-form/page-header";
 
 export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: "Home", href: route("dashboard") },
-        { title: lot.name, href: route("lots.view", { lot: lot.id }) },
-        { title: "Edit" },
-    ];
-
     const initial: LotData = {
         name: lot.name ?? "",
         description: lot.description ?? "",
@@ -36,24 +29,36 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
     const { data, setData, errors, processing } = useForm<LotData>(initial);
     const [previews, setPreviews] = useState<string[]>([]);
 
-    const onFilesChange = (files: FileList | null) => {
-        const arr = files ? Array.from(files) : [];
-        setData("images", arr);
-        setPreviews(arr.map((f) => URL.createObjectURL(f)));
+    const handleAddImages = (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        const arr = Array.from(files);
+        const newImages = [...(data.images ?? []), ...arr];
+        setData("images", newImages);
+        setPreviews(newImages.map((f) => URL.createObjectURL(f)));
+    };
+
+    const handleRemoveImage = (index: number) => {
+        const newImages = (data.images ?? []).filter((_, i) => i !== index);
+        setData("images", newImages);
+        setPreviews(newImages.map((f) => URL.createObjectURL(f)));
+    };
+
+    const handleReorderImages = (indexA: number, indexB: number) => {
+        const newImages = [...(data.images ?? [])];
+        [newImages[indexA], newImages[indexB]] = [newImages[indexB], newImages[indexA]];
+        setData("images", newImages);
+        setPreviews(newImages.map((f) => URL.createObjectURL(f)));
     };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         const fd = new FormData();
         fd.append("_method", "PATCH");
-
         fd.append("name", data.name ?? "");
         fd.append("description", data.description ?? "");
         fd.append("creator_link", data.creator_link ?? "");
-
         fd.append("download_link", data.download_link ?? "");
         fd.append("gallery_id", data.gallery_id ?? "");
-
         fd.append("lot_size", data.lot_size);
         fd.append("content_type", data.content_type);
         fd.append("furnishing", data.furnishing);
@@ -77,16 +82,17 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
     const badIndexes = Object.keys(errors)
         .filter((k) => k.startsWith("images.") && /^\d+$/.test(k.split(".")[1]))
         .map((k) => Number(k.split(".")[1]));
+
     const badSet = useMemo(() => new Set(badIndexes ?? []), [badIndexes]);
 
     const { props } = usePage<{ errors: Record<string, string> }>();
     const serverErrors = props.errors ?? {};
     const existingBlockErrors = Object.values(serverErrors).filter(msg =>
-        msg.includes("удалить") || msg.includes("delete")
+        msg.includes("delete")
     );
 
     return (
-        <MainLayout breadcrumbs={breadcrumbs}>
+        <MainLayout>
             <Head title={`${lot.name} • edit`} />
 
             <div className="container mx-auto max-w-screen-md px-4">
@@ -103,7 +109,9 @@ export default function EditLot({ lot, enums }: { lot: Lot; enums: Enums }) {
                         errors={errors}
                         enums={enums}
                         previews={previews}
-                        onFilesChange={onFilesChange}
+                        onAddImages={handleAddImages}
+                        onRemoveImage={handleRemoveImage}
+                        onReorderImages={handleReorderImages}
                         badSet={badSet}
                     />
 

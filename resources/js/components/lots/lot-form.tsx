@@ -34,11 +34,13 @@ type Props = {
     errors: Record<string, string>;
     enums: Enums;
     previews?: string[];
-    onFilesChange?: (files: FileList | null) => void;
+    onAddImages?: (files: FileList | null) => void;
+    onRemoveImage?: (index: number) => void;
+    onReorderImages?: (from: number, to: number) => void;
     badSet?: Set<number>;
 };
 
-export function LotForm({ data, setData, errors, enums, previews, onFilesChange, badSet }: Props) {
+export function LotForm({ data, setData, errors, enums, previews, onAddImages, onRemoveImage, onReorderImages, badSet }: Props) {
     const isCommunity = data.lot_type === "Community";
 
     useEffect(() => {
@@ -134,14 +136,13 @@ export function LotForm({ data, setData, errors, enums, previews, onFilesChange,
                 error={errors.bathrooms}
             />
 
-            {onFilesChange && (
+            {onAddImages && onRemoveImage && onReorderImages && (
                 <div className="sm:col-span-2">
                     <ImageUpload
-                        label="Add new images"
-                        helper="Tip: 16:9 looks best. These will be added to existing ones."
-                        onChange={onFilesChange}
+                        label="Images"
+                        images={data.images || []}
+                        setImages={(files) => setData("images", files)}
                         errors={errors}
-                        previews={previews || []}
                         badSet={badSet || new Set()}
                     />
                 </div>

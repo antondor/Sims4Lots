@@ -11,10 +11,11 @@ import {
     DrawerFooter
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Menu, LayoutDashboard, Home, Folder } from "lucide-react";
+import { Menu, Home, Folder, Heart } from "lucide-react";
 import { Link, usePage } from "@inertiajs/react";
 import { cn } from "@/lib/utils";
 import { route } from "ziggy-js";
+import { useTheme } from "@/components/theme-provider";
 
 export function MobileNav() {
     const [open, setOpen] = useState(false);
@@ -22,6 +23,12 @@ export function MobileNav() {
     const { props: pageProps } = usePage();
     const auth = (pageProps as any).auth;
     const user = auth?.user;
+
+    const { theme } = useTheme();
+    const isSystemDark =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = theme === "dark" || (theme === "system" && isSystemDark);
 
     return (
         <Drawer direction="left" open={open} onOpenChange={setOpen}>
@@ -42,10 +49,10 @@ export function MobileNav() {
                             className="flex items-center gap-2 w-fit"
                             onClick={() => setOpen(false)}
                         >
-                            <img 
-                                src="/logo.svg" 
-                                alt="TheSimsBuilds" 
-                                className="h-8 w-8 object-contain" 
+                            <img
+                                src={isDark ? "/logo_name_white.svg" : "/logo_name.svg"}
+                                alt="TheSimsBuilds"
+                                className="h-12 w-12 object-contain"
                             />
                             <span className="font-bold text-lg">The Sims Builds</span>
                         </Link>
@@ -66,7 +73,7 @@ export function MobileNav() {
 
                         {user && (
                             <MobileLink href={route("favourites.index", { user: user.id })} onOpenChange={setOpen}>
-                                <Folder className="mr-2 h-5 w-5" />
+                                <Heart className="mr-2 h-5 w-5" />
                                 Favourites
                             </MobileLink>
                         )}

@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
                 ->whereNumber('image')->name('images.destroy');
             Route::patch('{image}/cover', [LotImageController::class, 'setCover'])
                 ->whereNumber('image')->name('images.cover');
+            Route::patch('reorder', [LotImageController::class, 'reorder'])->name('images.reorder');
         });
 
         Route::post('{lot}/favorite', [FavoriteController::class, 'toggle'])

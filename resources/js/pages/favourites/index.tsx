@@ -21,28 +21,19 @@ type Props = {
 
 export default function FavouritesIndex({ lots, owner, isOwner }: Props) {
     const hasLots = lots.data.length > 0;
-
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: "Home", href: route("dashboard") },
-        isOwner
-            ? { title: "Favourites" }
-            : { title: `${owner.name}'s favourites` },
-    ];
-
     const title = isOwner ? "Favourites" : `${owner.name} — Favourites`;
     const displayTitle = isOwner ? "Favourites" : `${owner.name}'s favourites`;
 
     return (
         <>
             <Head title={title} />
-            <MainLayout breadcrumbs={breadcrumbs}>
-                
+            <MainLayout>
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                         {displayTitle}
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        {isOwner 
+                        {isOwner
                             ? "Your personal collection of saved lots for quick access"
                             : `Browse the collection of lots saved by ${owner.name}`
                         }
